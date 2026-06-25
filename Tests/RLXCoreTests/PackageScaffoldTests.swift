@@ -1,21 +1,40 @@
+import MLX
 import RLXCore
 import XCTest
 
-/// Smoke tests for PR-01 package scaffold: targets link and package identity is present.
+/// Smoke tests for PR-01 package scaffold.
 ///
-/// Full MLX `eval` runtime checks require Metal library resources shipped with mlx-swift
-/// under a full Xcode / app-bundle environment. Those belong in later PRs once env logic exists.
+/// Run with `xcodebuild` (not plain `swift test`) so Cmlx Metal shaders are built:
+///   xcodebuild test -scheme rlx-swift-Package -destination 'platform=macOS'
 final class PackageScaffoldTests: XCTestCase {
+
+    override func setUp() {
+        super.setUp()
+        // Prefer CPU for deterministic unit tests; still exercises MLX runtime.
+        _ = Device.withDefaultDevice(.cpu) { () -> Void in }
+    }
 
     func testRLXCoreExportsVersionString() {
         XCTAssertFalse(RLXCore.version.isEmpty)
         XCTAssertTrue(RLXCore.version.contains("0.1.0"))
     }
 
-    func testRLXCoreExposesMLXSmokeFactory() {
-        // Compile-time linkage: the factory is public and returns MLXArray (imported via RLXCore/MLX).
-        // Do not call it here — constructing MLXArray initializes Metal and needs default.metallib.
-        let factory = RLXCore.mlxSmokeArray
-        XCTAssertNotNil(factory)
+    func testRLXCoreCanConstructAndEvalMLXArray() {
+        Device.withDefaultDevice(.cpu) {
+            let array = RLXCore.mlxSmokeArray()
+            eval(array)
+            XCTAssertEqual(array.shape, [])
+            XCTAssertEqual(array.item(Float.self), 1.0)
+        }
+    }
+
+    func testMLXIsImportableAndOperableFromTestTarget() {
+        Device.withDefaultDevice(.cpu) {
+            let a = MLXArray([1.0, 2.0, 3.0] as [Float])
+            let b = a + a
+            eval(b)
+            XCTAssertEqual(b.shape, [3])
+            XCTAssertEqual(b[0].item(Float.self), 2.0)
+        }
     }
 }

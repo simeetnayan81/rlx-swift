@@ -32,7 +32,10 @@ let package = Package(
         ),
         .testTarget(
             name: "RLXCoreTests",
-            dependencies: ["RLXCore"],
+            dependencies: [
+                "RLXCore",
+                .product(name: "MLX", package: "mlx-swift"),
+            ],
             path: "Tests/RLXCoreTests"
         ),
         // Local/CI-independent smoke executable (no XCTest / Metal runtime required).

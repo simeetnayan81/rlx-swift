@@ -20,14 +20,20 @@ jobs:
       - name: Swift version
         run: swift --version
 
+      # Xcode 16+ / 26+ may ship Metal compiler separately (mlx-swift Cmlx needs it).
+      - name: Ensure Metal Toolchain
+        run: xcodebuild -downloadComponent MetalToolchain || true
+
+      # mlx-swift Metal shaders require xcodebuild (SwiftPM CLI cannot compile them).
+      # See: https://github.com/ml-explore/mlx-swift#xcodebuild
       - name: Resolve package dependencies
         run: swift package resolve
 
-      - name: Build
-        run: swift build
+      - name: Build (xcodebuild)
+        run: xcodebuild build -scheme rlx-swift-Package -destination 'platform=macOS'
 
-      - name: Test
-        run: swift test
+      - name: Test (xcodebuild)
+        run: xcodebuild test -scheme rlx-swift-Package -destination 'platform=macOS'
 
   # Tier-2: iOS compile smoke (optional; not a full test matrix in v1)
   ios-build:

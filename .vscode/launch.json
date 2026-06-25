@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:rlx-swift}",
+            "name": "Debug RLXCoreSmoke",
+            "target": "RLXCoreSmoke",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug RLXCoreSmoke"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:rlx-swift}",
+            "name": "Release RLXCoreSmoke",
+            "target": "RLXCoreSmoke",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release RLXCoreSmoke"
+        }
+    ]
+}
