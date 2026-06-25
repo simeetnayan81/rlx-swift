@@ -6,10 +6,9 @@ on:
   pull_request:
     branches: [main]
 
-# Package requires swift-tools-version 6.3 (mlx-swift 0.31.x pin).
-# On macos-15, /Applications/Xcode.app is often Xcode 16.x (Swift 6.1) — we must
-# select an Xcode 26.x install explicitly. Do NOT set a global DEVELOPER_DIR to
-# Xcode.app; that overrides xcode-select and pins Swift 6.1.
+# Package: swift-tools-version 6.0 (mlx-swift 0.31.4 pin uses 5.12).
+# On macos-15, /Applications/Xcode.app is often Xcode 16.x — prefer Xcode 26.x
+# for current SDKs/Metal. Do NOT set a global DEVELOPER_DIR to Xcode.app.
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -21,11 +20,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Select Xcode (Swift 6.3+)
+      - name: Select Xcode (prefer 26.x)
         id: xcode
         run: |
           set -euo pipefail
           selected=""
+          # Prefer newest 26.x for SDKs/Metal; fall back to default Xcode.app if needed.
           for candidate in \
             /Applications/Xcode_26.5.app \
             /Applications/Xcode_26.4.app \
@@ -34,29 +34,30 @@ jobs:
             /Applications/Xcode_26.1.1.app \
             /Applications/Xcode_26.1.app \
             /Applications/Xcode_26.0.1.app \
-            /Applications/Xcode_26.app; do
+            /Applications/Xcode_26.app \
+            /Applications/Xcode_16.4.app \
+            /Applications/Xcode.app; do
             if [[ -d "$candidate/Contents/Developer" ]]; then
               selected="$candidate"
               break
             fi
           done
           if [[ -z "$selected" ]]; then
-            echo "::error::No Xcode 26.x found. This package needs Swift 6.3 (swift-tools-version 6.3)."
-            echo "Installed Xcode apps:"
+            echo "::error::No suitable Xcode.app found."
             ls -d /Applications/Xcode*.app 2>/dev/null || true
             exit 1
           fi
           DEV="$selected/Contents/Developer"
           sudo xcode-select -s "$DEV"
-          # Persist for all later steps (takes precedence over any default Xcode.app).
           echo "DEVELOPER_DIR=$DEV" >> "$GITHUB_ENV"
           export DEVELOPER_DIR="$DEV"
           echo "Selected: $selected"
           echo "DEVELOPER_DIR=$DEV"
           xcodebuild -version
           swift --version
-          if ! swift --version 2>&1 | grep -qE 'Swift version 6\.(3|4|5|[6-9])'; then
-            echo "::error::Swift toolchain is older than 6.3; package resolve will fail."
+          # Package tools-version is 6.0; need Swift 6.0+ (Xcode 16.x / 26.x both OK).
+          if ! swift --version 2>&1 | grep -qE 'Swift version 6\.'; then
+            echo "::error::Need Swift 6.x toolchain (package swift-tools-version: 6.0)."
             exit 1
           fi
 
@@ -85,7 +86,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Select Xcode (Swift 6.3+)
+      - name: Select Xcode (prefer 26.x)
         run: |
           set -euo pipefail
           selected=""
@@ -97,14 +98,16 @@ jobs:
             /Applications/Xcode_26.1.1.app \
             /Applications/Xcode_26.1.app \
             /Applications/Xcode_26.0.1.app \
-            /Applications/Xcode_26.app; do
+            /Applications/Xcode_26.app \
+            /Applications/Xcode_16.4.app \
+            /Applications/Xcode.app; do
             if [[ -d "$candidate/Contents/Developer" ]]; then
               selected="$candidate"
               break
             fi
           done
           if [[ -z "$selected" ]]; then
-            echo "::error::No Xcode 26.x found for iOS smoke build."
+            echo "::error::No suitable Xcode.app found for iOS smoke build."
             ls -d /Applications/Xcode*.app 2>/dev/null || true
             exit 1
           fi

@@ -12,7 +12,7 @@ It is **not** an algorithms package. Policies, losses, and optimizers live in se
 
 | Item | Version / note |
 |------|----------------|
-| Swift | 6.3+ (aligned with pinned mlx-swift) |
+| Swift | 6.0+ (`swift-tools-version: 6.0`; mlx-swift 0.31.4 pin is 5.12) |
 | Platforms | macOS 14+, iOS 17+, tvOS 17+, visionOS 1+ |
 | mlx-swift | `0.31.x` (SwiftPM pin in `Package.swift`) |
 

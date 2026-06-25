@@ -1,6 +1,7 @@
-// swift-tools-version: 6.3
-// The swift-tools-version declares the minimum version of Swift required to build this package.
-// Aligned with the pinned mlx-swift release (see dependencies below).
+// swift-tools-version: 6.0
+// Minimum SwiftPM tools version for this package.
+// Pinned mlx-swift 0.31.4 declares 5.12; we use 6.0 for Swift 6 language mode.
+// (mlx-swift main may require 6.3 — do not copy main's tools-version unless you bump the pin.)
 
 import PackageDescription
 
