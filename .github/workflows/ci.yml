@@ -6,125 +6,42 @@ on:
   pull_request:
     branches: [main]
 
-# Package: swift-tools-version 6.0 (mlx-swift 0.31.4 pin uses 5.12).
-# On macos-15, /Applications/Xcode.app is often Xcode 16.x — prefer Xcode 26.x
-# for current SDKs/Metal. Do NOT set a global DEVELOPER_DIR to Xcode.app.
+# swift-tools-version: 6.0 — runner default Xcode (16.x/26.x) is enough.
+# Use xcodebuild for build/test: mlx-swift Cmlx Metal shaders need it.
 
 jobs:
-  # ---------------------------------------------------------------------------
-  # Tier-1: macOS build + XCTest (design.md §27.10)
-  # ---------------------------------------------------------------------------
   macos-test:
-    name: macOS xcodebuild test
+    name: macOS
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
 
-      - name: Select Xcode (prefer 26.x)
-        id: xcode
+      - name: Show toolchain
         run: |
-          set -euo pipefail
-          selected=""
-          # Prefer newest 26.x for SDKs/Metal; fall back to default Xcode.app if needed.
-          for candidate in \
-            /Applications/Xcode_26.5.app \
-            /Applications/Xcode_26.4.app \
-            /Applications/Xcode_26.3.app \
-            /Applications/Xcode_26.2.app \
-            /Applications/Xcode_26.1.1.app \
-            /Applications/Xcode_26.1.app \
-            /Applications/Xcode_26.0.1.app \
-            /Applications/Xcode_26.app \
-            /Applications/Xcode_16.4.app \
-            /Applications/Xcode.app; do
-            if [[ -d "$candidate/Contents/Developer" ]]; then
-              selected="$candidate"
-              break
-            fi
-          done
-          if [[ -z "$selected" ]]; then
-            echo "::error::No suitable Xcode.app found."
-            ls -d /Applications/Xcode*.app 2>/dev/null || true
-            exit 1
-          fi
-          DEV="$selected/Contents/Developer"
-          sudo xcode-select -s "$DEV"
-          echo "DEVELOPER_DIR=$DEV" >> "$GITHUB_ENV"
-          export DEVELOPER_DIR="$DEV"
-          echo "Selected: $selected"
-          echo "DEVELOPER_DIR=$DEV"
           xcodebuild -version
           swift --version
-          # Package tools-version is 6.0; need Swift 6.0+ (Xcode 16.x / 26.x both OK).
-          if ! swift --version 2>&1 | grep -qE 'Swift version 6\.'; then
-            echo "::error::Need Swift 6.x toolchain (package swift-tools-version: 6.0)."
-            exit 1
-          fi
 
-      # mlx-swift Cmlx needs the Metal compiler (may be a separate Xcode component).
-      - name: Ensure Metal Toolchain
+      - name: Metal toolchain (optional, newer Xcode)
         run: xcodebuild -downloadComponent MetalToolchain || true
 
-      # Resolve via SwiftPM (uses DEVELOPER_DIR / selected toolchain).
-      - name: Resolve package dependencies
+      - name: Resolve
         run: swift package resolve
 
-      # Build/test via xcodebuild so Cmlx Metal shaders compile (swift build cannot).
-      - name: Build (xcodebuild)
-        run: xcodebuild build -scheme rlx-swift-Package -destination 'platform=macOS' -quiet
+      - name: Build
+        run: xcodebuild build -scheme rlx-swift-Package -destination 'platform=macOS'
 
-      - name: Test (xcodebuild)
+      - name: Test
         run: xcodebuild test -scheme rlx-swift-Package -destination 'platform=macOS'
 
-  # ---------------------------------------------------------------------------
-  # Tier-2: iOS compile smoke only (continue-on-error; not a full test matrix)
-  # ---------------------------------------------------------------------------
   ios-build:
-    name: iOS compile smoke
+    name: iOS (smoke)
     runs-on: macos-15
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
-      - name: Select Xcode (prefer 26.x)
-        run: |
-          set -euo pipefail
-          selected=""
-          for candidate in \
-            /Applications/Xcode_26.5.app \
-            /Applications/Xcode_26.4.app \
-            /Applications/Xcode_26.3.app \
-            /Applications/Xcode_26.2.app \
-            /Applications/Xcode_26.1.1.app \
-            /Applications/Xcode_26.1.app \
-            /Applications/Xcode_26.0.1.app \
-            /Applications/Xcode_26.app \
-            /Applications/Xcode_16.4.app \
-            /Applications/Xcode.app; do
-            if [[ -d "$candidate/Contents/Developer" ]]; then
-              selected="$candidate"
-              break
-            fi
-          done
-          if [[ -z "$selected" ]]; then
-            echo "::error::No suitable Xcode.app found for iOS smoke build."
-            ls -d /Applications/Xcode*.app 2>/dev/null || true
-            exit 1
-          fi
-          DEV="$selected/Contents/Developer"
-          sudo xcode-select -s "$DEV"
-          echo "DEVELOPER_DIR=$DEV" >> "$GITHUB_ENV"
-          export DEVELOPER_DIR="$DEV"
-          xcodebuild -version
-          swift --version
-
-      - name: Ensure Metal Toolchain
+      - name: Metal toolchain (optional)
         run: xcodebuild -downloadComponent MetalToolchain || true
 
-      # xcodebuild only — plain swift build cannot compile Cmlx metallib.
-      - name: Build for iOS simulator
-        run: >
-          xcodebuild build
-          -scheme rlx-swift-Package
-          -destination 'generic/platform=iOS Simulator'
-          -quiet
+      - name: Build simulator
+        run: xcodebuild build -scheme rlx-swift-Package -destination 'generic/platform=iOS Simulator'

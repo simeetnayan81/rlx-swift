@@ -29,15 +29,8 @@ dependencies: [
 ```
 
 ```bash
-# Identity / link smoke (no Metal shaders required)
-swift build
-swift run RLXCoreSmoke
-
-# Full build + XCTest — use xcodebuild so Cmlx Metal shaders compile
-# (plain `swift test` / `swift build` cannot build metallib; see mlx-swift README)
-# One-time (Xcode 16+/26+): xcodebuild -downloadComponent MetalToolchain
-xcodebuild build -scheme rlx-swift-Package -destination 'platform=macOS'
-xcodebuild test  -scheme rlx-swift-Package -destination 'platform=macOS'
+swift build && swift run RLXCoreSmoke          # link smoke (no Metal)
+xcodebuild test -scheme rlx-swift-Package -destination 'platform=macOS'   # full tests (needs xcodebuild for Metal)
 # or: ./scripts/xcodebuild-test.sh
 ```
 
