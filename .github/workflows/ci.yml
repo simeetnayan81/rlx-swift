@@ -6,21 +6,45 @@ on:
   pull_request:
     branches: [main]
 
+# Package requires swift-tools-version 6.3 (mlx-swift 0.31.x pin).
+# Xcode 16.x ships Swift 6.1 — use Xcode 26.x on runners.
+env:
+  DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
+
 jobs:
   # Tier-1: macOS build + test (design.md §27.10)
   macos-test:
-    name: macOS swift test
+    name: macOS xcodebuild test
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
 
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_16.3.app/Contents/Developer || sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+      - name: Select Xcode (Swift 6.3+)
+        run: |
+          set -euo pipefail
+          # Prefer Xcode 26.x (Swift 6.3); fall back through newer/default installs.
+          for candidate in \
+            /Applications/Xcode_26.5.app \
+            /Applications/Xcode_26.4.app \
+            /Applications/Xcode_26.3.app \
+            /Applications/Xcode_26.2.app \
+            /Applications/Xcode_26.1.app \
+            /Applications/Xcode_26.0.1.app \
+            /Applications/Xcode_26.app \
+            /Applications/Xcode.app; do
+            if [[ -d "$candidate/Contents/Developer" ]]; then
+              sudo xcode-select -s "$candidate/Contents/Developer"
+              echo "Selected: $candidate"
+              break
+            fi
+          done
+          xcodebuild -version
+          swift --version
+          # Fail fast if tools-version still too old for this package.
+          swift_major_minor=$(swift --version 2>/dev/null | head -1 | sed -n 's/.*Swift version \([0-9]*\.[0-9]*\).*/\1/p')
+          echo "Swift major.minor: ${swift_major_minor:-unknown}"
 
-      - name: Swift version
-        run: swift --version
-
-      # Xcode 16+ / 26+ may ship Metal compiler separately (mlx-swift Cmlx needs it).
+      # Xcode 16+/26+ may ship Metal compiler separately (mlx-swift Cmlx needs it).
       - name: Ensure Metal Toolchain
         run: xcodebuild -downloadComponent MetalToolchain || true
 
@@ -30,7 +54,7 @@ jobs:
         run: swift package resolve
 
       - name: Build (xcodebuild)
-        run: xcodebuild build -scheme rlx-swift-Package -destination 'platform=macOS'
+        run: xcodebuild build -scheme rlx-swift-Package -destination 'platform=macOS' -quiet
 
       - name: Test (xcodebuild)
         run: xcodebuild test -scheme rlx-swift-Package -destination 'platform=macOS'
@@ -43,12 +67,34 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_16.3.app/Contents/Developer || sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-
-      - name: Build for iOS simulator (generic)
+      - name: Select Xcode (Swift 6.3+)
         run: |
-          swift build \
-            --triple arm64-apple-ios17.0-simulator \
-            -Xswiftc -sdk -Xswiftc "$(xcrun --sdk iphonesimulator --show-sdk-path)" \
-            || xcodebuild -scheme rlx-swift-Package -destination 'generic/platform=iOS Simulator' build
+          set -euo pipefail
+          for candidate in \
+            /Applications/Xcode_26.5.app \
+            /Applications/Xcode_26.4.app \
+            /Applications/Xcode_26.3.app \
+            /Applications/Xcode_26.2.app \
+            /Applications/Xcode_26.1.app \
+            /Applications/Xcode_26.0.1.app \
+            /Applications/Xcode_26.app \
+            /Applications/Xcode.app; do
+            if [[ -d "$candidate/Contents/Developer" ]]; then
+              sudo xcode-select -s "$candidate/Contents/Developer"
+              echo "Selected: $candidate"
+              break
+            fi
+          done
+          xcodebuild -version
+          swift --version
+
+      - name: Ensure Metal Toolchain
+        run: xcodebuild -downloadComponent MetalToolchain || true
+
+      # Use xcodebuild only — swift build cannot compile Cmlx Metal shaders.
+      - name: Build for iOS simulator
+        run: >
+          xcodebuild build
+          -scheme rlx-swift-Package
+          -destination 'generic/platform=iOS Simulator'
+          -quiet
