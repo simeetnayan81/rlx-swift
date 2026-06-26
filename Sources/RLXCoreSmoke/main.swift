@@ -27,6 +27,12 @@ do {
     print("RLXCoreSmoke: all checks passed (rlx-swift \(RLXCore.version), RLXCore+MLX linked at build time)")
     exit(0)
 } catch {
-    fputs("RLXCoreSmoke FAILED: \(error)\n", stderr)
+    // Avoid Darwin/Glibc `stderr` — not concurrency-safe under Swift 6 on Linux.
+    let message = "RLXCoreSmoke FAILED: \(error)\n"
+    if let data = message.data(using: .utf8) {
+        try? FileHandle.standardError.write(contentsOf: data)
+    } else {
+        print(message, terminator: "")
+    }
     exit(1)
 }

@@ -13,10 +13,11 @@ It is **not** an algorithms package. Policies, losses, and optimizers live in se
 | Item | Version / note |
 |------|----------------|
 | Swift | 6.0+ (`swift-tools-version: 6.0`; mlx-swift 0.31.4 pin is 5.12) |
-| Platforms | macOS 14+, iOS 17+, tvOS 17+, visionOS 1+ |
+| Platforms (declared) | macOS 14+, iOS 17+, tvOS 17+, visionOS 1+ |
+| Linux (tier-2) | Supported for **CPU** mlx-swift builds only; see [Building on Linux](#building-on-linux) |
 | mlx-swift | `0.31.x` (SwiftPM pin in `Package.swift`) |
 
-**Tier-1 CI:** macOS `swift test`. Other Apple platforms are compile targets (tier-2 smoke optional).
+**Tier-1 CI:** macOS `xcodebuild` build+test (Metal). **Tier-2:** Linux compile + `RLXCoreSmoke` (CPU, no Metal). Other Apple platforms are compile targets (optional).
 
 ## Quick start
 
@@ -28,10 +29,146 @@ dependencies: [
 // target dependency: .product(name: "RLXCore", package: "rlx-swift")
 ```
 
+### macOS
+
 ```bash
-swift build && swift run RLXCoreSmoke          # link smoke (no Metal)
-xcodebuild test -scheme rlx-swift-Package -destination 'platform=macOS'   # full tests (needs xcodebuild for Metal)
+swift build && swift run RLXCoreSmoke          # link smoke (no Metal runtime eval)
+xcodebuild test -scheme rlx-swift-Package -destination 'platform=macOS'   # full tests (Metal)
 # or: ./scripts/xcodebuild-test.sh
+```
+
+### Linux
+
+See [Building on Linux](#building-on-linux) below, or run:
+
+```bash
+./scripts/linux-smoke.sh
+```
+
+## Building on Linux
+
+Linux is **tier-2**: useful for server-side collection workers and CI without a Mac. mlx-swift uses its **CPU backend** (no Metal). Full XCTest suites that evaluate `MLXArray` may still need a Mac/Metal path; the supported Linux gate is **build + `RLXCoreSmoke`**.
+
+### 1. Install Swift
+
+Install Swift **6.0+** for your distro from [swift.org/install/linux](https://www.swift.org/install/linux/). Confirm:
+
+```bash
+swift --version   # 6.0 or newer
+```
+
+A C++ toolchain is required to compile mlx-swift’s `Cmlx` (usually comes with `build-essential` / `gcc-c++`).
+
+### 2. Install BLAS / LAPACK (required)
+
+On Linux, mlx-swift does **not** use Accelerate. The CPU backend includes `<cblas.h>` / LAPACK and links `openblas`, `blas`, `lapack`, and `gfortran`. Without the **dev** packages you get:
+
+```text
+fatal error: 'cblas.h' file not found
+```
+
+**Debian / Ubuntu** (and most containers):
+
+```bash
+sudo apt-get update -y
+sudo apt-get install -y \
+  build-essential \
+  libblas-dev \
+  liblapacke-dev \
+  libopenblas-dev \
+  gfortran
+```
+
+**Fedora / RHEL-style:**
+
+```bash
+sudo dnf install -y \
+  gcc-c++ \
+  make \
+  blas-devel \
+  lapack-devel \
+  openblas-devel \
+  gcc-gfortran
+```
+
+Sanity-check headers (paths vary by distro):
+
+```bash
+# one of these should exist
+ls /usr/include/cblas.h \
+   /usr/include/x86_64-linux-gnu/cblas.h \
+   /usr/include/openblas/cblas.h 2>/dev/null
+```
+
+These packages match [mlx-swift’s Linux CI setup](https://github.com/ml-explore/mlx-swift/blob/main/.github/scripts/setup%2Bbuild-linux-container-cmake.sh).
+
+### 3. Build
+
+From the repo root:
+
+```bash
+git clone https://github.com/<org>/rlx-swift.git
+cd rlx-swift
+
+swift package resolve
+swift build
+```
+
+First build compiles mlx-swift `Cmlx` from source and can take several minutes. On failure, wipe the cache and retry after installing deps:
+
+```bash
+rm -rf .build
+swift build
+```
+
+Useful variants:
+
+```bash
+swift build -c release          # optimized
+swift build --product RLXCore   # library only
+swift build --product RLXCoreSmoke
+```
+
+### 4. Smoke test
+
+`RLXCoreSmoke` is the Linux-friendly gate: it links `RLXCore` + `MLX` at **build** time and checks package identity at **run** time **without** calling `MLXArray` eval (avoids Metal/runtime resource issues on CLI toolchains).
+
+```bash
+swift run RLXCoreSmoke
+# or, after a successful build:
+.build/debug/RLXCoreSmoke
+# release:
+# swift run -c release RLXCoreSmoke
+```
+
+Expected output (exit code `0`):
+
+```text
+RLXCoreSmoke: all checks passed (rlx-swift 0.1.0, RLXCore+MLX linked at build time)
+```
+
+One-shot helper (install deps yourself first, or pass `--install-deps` on Debian/Ubuntu with sudo):
+
+```bash
+./scripts/linux-smoke.sh
+# ./scripts/linux-smoke.sh --install-deps   # apt only
+# ./scripts/linux-smoke.sh --release
+```
+
+### 5. What Linux does *not* cover (yet)
+
+| Check | Linux | Notes |
+|-------|--------|--------|
+| `swift build` (`RLXCore`, `RLXCoreSmoke`) | Yes | CPU backend |
+| `swift run RLXCoreSmoke` | Yes | Link + identity only |
+| `swift test` / XCTest with `MLXArray` eval | Not tier-1 | Prefer macOS + `xcodebuild` for Metal-backed runtime tests |
+| Metal / GPU | No | CUDA is an mlx-swift Linux option for MLX itself; not wired as rlx tier-1 |
+| iOS / visionOS products | No | Apple SDKs only |
+
+For full tests on a Mac:
+
+```bash
+./scripts/xcodebuild-test.sh
 ```
 
 ## Package layout

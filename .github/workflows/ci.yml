@@ -6,8 +6,8 @@ on:
   pull_request:
     branches: [main]
 
-# swift-tools-version: 6.0 — runner default Xcode (16.x/26.x) is enough.
-# Use xcodebuild for build/test: mlx-swift Cmlx Metal shaders need it.
+# Tier-1: macOS xcodebuild (Metal). Tier-2: Linux CPU build + RLXCoreSmoke.
+# swift-tools-version: 6.0 — runner defaults are enough on both platforms.
 
 jobs:
   macos-test:
@@ -32,6 +32,35 @@ jobs:
 
       - name: Test
         run: xcodebuild test -scheme rlx-swift-Package -destination 'platform=macOS'
+
+  linux-smoke:
+    name: Linux (CPU smoke)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      # Official Swift 6.0+ for Linux; matches Package.swift tools-version floor.
+      - name: Install Swift
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "6.0"
+
+      - name: Show toolchain
+        run: swift --version
+
+      # mlx-swift CPU backend needs OpenBLAS/LAPACK headers (cblas.h) + gfortran.
+      - name: Install BLAS / LAPACK
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            build-essential \
+            libblas-dev \
+            liblapacke-dev \
+            libopenblas-dev \
+            gfortran
+
+      - name: Build and RLXCoreSmoke
+        run: ./scripts/linux-smoke.sh
 
   ios-build:
     name: iOS (smoke)
