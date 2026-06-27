@@ -1,0 +1,15 @@
+# Keep Linux image builds small and avoid copying Darwin SPM / Xcode artifacts.
+.git
+.build
+.swiftpm
+DerivedData
+**/xcuserdata
+**/*.xcodeproj
+**/*.xcworkspace
+!default.xcworkspace
+.netrc
+.DS_Store
+**/.DS_Store
+*.xcresult
+.idea
+.vscode

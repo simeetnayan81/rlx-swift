@@ -1,7 +1,7 @@
 // RLXCore — reinforcement learning environment & data-collection substrate on mlx-swift.
 //
-// This module will host Environment/Space protocols, result types, seeding, and errors.
-// Behaviour is added incrementally (see design.md §28 PR plan); PR-01 is scaffold only.
+// Hosts result types, errors, and (incrementally) Environment/Space protocols,
+// seeding, and registry. See design.md §28 PR plan.
 
 import MLX
 

@@ -6,7 +6,7 @@ Reinforcement learning infrastructure for Swift, built on [mlx-swift](https://gi
 
 It is **not** an algorithms package. Policies, losses, and optimizers live in separate targets/packages (`MLXNN`, `MLXOptimizers`, future `rlx-swift-algorithms`).
 
-> **Status:** Early scaffold. See [design.md](design.md) for architecture, API contracts, and the PR implementation plan.
+> **Status:** Core result types (`StepResult`, `ResetResult`, `Info`, `EnvironmentError`, `RenderMode`). See [design.md](design.md) for architecture, API contracts, and the PR implementation plan.
 
 ## Requirements
 
@@ -155,6 +155,24 @@ One-shot helper (install deps yourself first, or pass `--install-deps` on Debian
 # ./scripts/linux-smoke.sh --release
 ```
 
+### 4b. Linux via Docker (macOS or any Docker host)
+
+Tier-2 Linux build + `RLXCoreSmoke` without a Linux VM. The repo root [`Dockerfile`](Dockerfile) is based on official `swift:6.0`, installs OpenBLAS/LAPACK, and runs [`scripts/linux-smoke.sh`](scripts/linux-smoke.sh).
+
+```bash
+# One-shot helper (builds image, bind-mounts \$PWD, runs smoke)
+./scripts/linux-smoke-docker.sh
+# ./scripts/linux-smoke-docker.sh --release
+# ./scripts/linux-smoke-docker.sh --rebuild   # force image rebuild
+
+# Or manually:
+docker build -t rlx-swift-linux .
+docker run --rm rlx-swift-linux                          # sources baked at build time
+docker run --rm -v "$PWD":/workspace:ro rlx-swift-linux # live host tree (no rebuild per edit)
+```
+
+Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Mac) or Docker Engine. First build compiles mlx-swift `Cmlx` for Linux and can take several minutes.
+
 ### 5. What Linux does *not* cover (yet)
 
 | Check | Linux | Notes |
@@ -175,7 +193,7 @@ For full tests on a Mac:
 
 | Target | Role | Status |
 |--------|------|--------|
-| `RLXCore` | Protocols, spaces, results, seed, errors, registry | Scaffold (PR-01) |
+| `RLXCore` | Protocols, spaces, results, seed, errors, registry | Core result types (PR-02) |
 | `RLXWrappers` | TimeLimit, transforms, order enforcement | Planned |
 | `RLXVector` | Sync / async vector envs | Planned |
 | `RLXEnvs` | Reference envs (CartPole, Pendulum, …) | Planned |
