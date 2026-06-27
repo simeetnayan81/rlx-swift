@@ -139,11 +139,15 @@ private func mlxArraysEqual(_ a: MLXArray, _ b: MLXArray) -> Bool {
             return a.asArray(Int32.self) == b.asArray(Int32.self)
         case .int64:
             return a.asArray(Int64.self) == b.asArray(Int64.self)
-        case .float16:
-            return a.asArray(Float16.self) == b.asArray(Float16.self)
-        case .bfloat16:
-            // No portable scalar buffer API; treat equal only if identical instance.
-            return a === b
+        case .float16, .bfloat16:
+            // `Float16` does not conform to `HasDType` on all platforms (notably
+            // Linux / some Swift stdlib builds), and bfloat16 has no portable
+            // scalar buffer API. Compare via float32 promotion instead of
+            // `asArray(Float16.self)` so macOS and Linux CI stay aligned.
+            let af = a.asType(Float.self)
+            let bf = b.asType(Float.self)
+            eval(af, bf)
+            return af.asArray(Float.self) == bf.asArray(Float.self)
         case .float32:
             return a.asArray(Float.self) == b.asArray(Float.self)
         case .float64:
