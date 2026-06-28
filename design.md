@@ -1210,7 +1210,7 @@ Incremental, reviewable PRs for `rlx-swift` implementation. Each PR should merge
 - **Title:** `feat(spaces): Space protocol, DiscreteSpace, BoxSpace`
 - **Affects:** `Sources/RLXCore/Space.swift`, `Spaces/DiscreteSpace.swift`, `Spaces/BoxSpace.swift`
 - **Depends on:** PR-03
-- **Description:** `sample`/`contains` for Swift RNG + MLX key; shape/dtype metadata.
+- **Description:** `Space` protocol; `DiscreteSpace` (`Int`, shape/dtype nil); `BoxSpace` (`MLXArray`); dual `sample(using:)` (Swift RNG / SplitMix64) and `sample(key:)` (MLXRandom only); finite bounds required for Box sample; no stored seed on spaces.
 
 ### PR-05 — MultiDiscrete, MultiBinary, Dict/Tuple spaces
 - **Title:** `feat(spaces): composite and multi spaces + flatten helpers`
