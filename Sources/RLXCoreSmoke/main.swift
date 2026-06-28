@@ -1,6 +1,6 @@
-// Tier-2 smoke: links RLXCore + exercises PR-02 types without MLXArray eval
+// Tier-2 smoke: links RLXCore + exercises PR-02/PR-03 types without MLXArray eval
 // (avoids Metal/runtime resource issues on CLI and Linux CPU toolchains).
-// Tier-1 XCTest (incl. MLXArray Info equality) runs via xcodebuild on macOS.
+// Tier-1 XCTest (incl. MLX key equality) runs via xcodebuild on macOS.
 
 import Foundation
 import RLXCore
@@ -172,7 +172,25 @@ do {
     let decoded = try JSONDecoder().decode(RenderMode.self, from: encoded)
     try expect(decoded == .human, "RenderMode Codable")
 
-    print("RLXCoreSmoke: all checks passed (rlx-swift \(RLXCore.version), RLXCore+MLX linked at build time; PR-02 types OK)")
+    // PR-03: Seed + SplitMix64 (pure Swift; no MLX eval)
+    let seed = Seed(42)
+    try expect(seed.rawValue == 42 && seed.uint64 == 42, "Seed rawValue")
+    try expect(Seed(rawValue: 42) == seed, "Seed equality")
+    let base1 = Seed(1)
+    try expect(base1.child(index: 0).rawValue == 0x910a2dec89025cc1, "Seed.child(0) golden")
+    try expect(base1.child(index: 0) == Seed(1).child(index: 0), "Seed.child determinism")
+    try expect(base1.child(index: 0) != base1.child(index: 1), "Seed.child distinct")
+    try expect(base1.child(index: 1) != base1, "child not parent")
+    try expect(seed.child(index: 0) == Seed(42).child(index: 0), "Seed(42).child determinism")
+
+    var sm0 = SplitMix64(seed: 0xDEAD_BEEF)
+    var sm1 = SplitMix64(seed: Seed(0xDEAD_BEEF))
+    try expect(sm0.next() == sm1.next(), "SplitMix64 reproducibility")
+    var smGold = SplitMix64(seed: 0xDEAD_BEEF)
+    try expect(smGold.next() == 0x4adfb90f68c9eb9b, "SplitMix64 golden first")
+    // MLX-backed PRNG.key / split need Metal metallib — covered by tier-1 XCTest only.
+
+    print("RLXCoreSmoke: all checks passed (rlx-swift \(RLXCore.version), RLXCore+MLX linked; PR-02+PR-03 Seed/SplitMix64 OK)")
     exit(0)
 } catch {
     let message = "RLXCoreSmoke FAILED: \(error)\n"
