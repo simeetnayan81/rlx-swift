@@ -193,7 +193,7 @@ For full tests on a Mac:
 
 | Target | Role | Status |
 |--------|------|--------|
-| `RLXCore` | Protocols, spaces, results, seed, errors, registry | Core result types (PR-02) |
+| `RLXCore` | Protocols, spaces, results, seed, errors, registry | Seed / PRNG helpers (PR-03); core result types (PR-02) |
 | `RLXWrappers` | TimeLimit, transforms, order enforcement | Planned |
 | `RLXVector` | Sync / async vector envs | Planned |
 | `RLXEnvs` | Reference envs (CartPole, Pendulum, …) | Planned |

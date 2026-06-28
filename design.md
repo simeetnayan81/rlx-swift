@@ -370,15 +370,20 @@ Batched parallel (logical) environments with **one** `reset`/`step` over `N` sub
 | `step(actions:)` | Batched actions → batched transitions |
 | `autoresetMode` | See §16 |
 
-### 8.5 `PRNG` / `Seedable`
+### 8.5 `PRNG` / seeding helpers
 
 ```text
-Seed: UInt64 (or struct wrapping UInt64 + stream id)
-PRNG: wraps MLX key (MLXArray) and/or Swift RNG
+Seed: struct Seed { rawValue: UInt64 }   // newtype; reset(seed:) stays UInt64? in Appendix A (pass seed.rawValue)
+PRNG: thin explicit-key wrapper over mlx-swift MLXRandom.key / split (not a second PRNG algorithm)
+SplitMix64: normative Swift RandomNumberGenerator for Space.sample(using:) and CPU paths
+EnvPRNGStreams: dynamics, observationNoise, actionNoise — fixed split order from root key
 ```
 
-- Environments that need randomness implement `SeedableEnvironment` or accept seed only via `reset(seed:)`.
-- **No** required global `seed()` method on env; seeding happens via `reset(seed:)` (and explicit space/PRNG APIs).
+- **Reuse mlx-swift:** all MLX tensor randomness uses `MLXRandom` (`key`, `split`, `uniform`, …) with an explicit `key:`. `PRNG` only threads keys and documents policy.
+- **No** process-global `MLXRandom.seed` inside library or environment code (avoids cross-talk between envs/tests).
+- **No** required global `seed()` method on env; seeding happens via `reset(seed:)` and explicit space/PRNG APIs.
+- Optional marker protocols (e.g. “seedable env”) are **not** required for v1; `reset(seed:)` is sufficient (PR-06).
+- Vector fan-out (PR-13): prefer `Seed.child(index:)` so each slot calls single-env `reset(seed: child.rawValue)`; MLX `split(into: numEnvs)` remains available for in-env key trees.
 
 ### 8.6 `EnvSpec`
 
@@ -619,20 +624,21 @@ This distinction is **critical** for correct TD / advantage targets and is a fir
 | `options` fixed init state | Debugging / unit tests without full RNG |
 | Space sampling | Pass explicit Swift RNG or MLX key; do not rely on env seed unless using shared `SeededSampler` |
 
-### 13.3 PRNG tree (recommended implementation pattern)
+### 13.3 PRNG tree (implementation pattern — PR-03 helpers)
 
 On `reset(seed: S)`:
 
-1. Create root MLX key `k0 = MLXRandom.key(S)`.
-2. Split into streams: `env_dynamics`, `obs_noise`, `action_noise` (if any), etc.
-3. Store stream keys on the env instance; each random op uses `split` to advance.
+1. Create root MLX key `k0 = MLXRandom.key(S)` (via `PRNG.key(from:)` / `PRNG(seed:)` — never global seed).
+2. Split into named streams with **fixed order** (`PRNG.envStreams`): `dynamics`, `observationNoise`, `actionNoise` (`split(into: 3)` indices 0/1/2).
+3. Store stream keys on the env instance; each random op uses `PRNG.split` / `nextKey()` to advance.
 4. Do **not** call process-global `MLXRandom.seed` inside env code (avoids cross-talk between envs/tests).
 
-Swift `RandomNumberGenerator` path: seed a deterministic RNG (e.g. `SplitMix64` / documented algorithm) stored on env for CPU-only envs.
+Swift `RandomNumberGenerator` path: **`SplitMix64`** (normative) seeded from `UInt64` / `Seed`, stored on env for CPU-only draws and `Space.sample(using:)`.
 
 ### 13.4 Vector env seeding
 
-- `reset(seed: base)` derives child seeds `hash(base, i)` or `split(key, numEnvs)` for sub-env `i`.
+- `reset(seed: base)` derives child seeds via **`Seed(base).child(index: i)`** (portable integer mix; default for PR-13) so each sub-env’s full PRNG tree matches single-env `reset(seed:)`.
+- Alternatively, MLX `PRNG.split(key, into: numEnvs)` for key-only fan-out when not re-entering single-env reset.
 - Passing `seed: nil` advances each sub-env independently from its prior state.
 - Optional `seed: [UInt64]` with length `numEnvs` for full control.
 
@@ -1198,7 +1204,7 @@ Incremental, reviewable PRs for `rlx-swift` implementation. Each PR should merge
 - **Title:** `feat(core): Seed, PRNG key tree helpers on MLX`
 - **Affects:** `Sources/RLXCore/Seed.swift`, `PRNG.swift`
 - **Depends on:** PR-02
-- **Description:** Deterministic split helpers; forbid global seed in API docs; tests for key reproducibility.
+- **Description:** `Seed` + `Seed.child`; `SplitMix64`; thin `PRNG` over `MLXRandom.key`/`split` + `EnvPRNGStreams`; forbid global seed in API docs; tests for key reproducibility (reuse mlx-swift PRNG, no second algorithm).
 
 ### PR-04 — Space protocol + Discrete & Box
 - **Title:** `feat(spaces): Space protocol, DiscreteSpace, BoxSpace`
