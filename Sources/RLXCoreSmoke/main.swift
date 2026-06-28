@@ -190,7 +190,16 @@ do {
     try expect(smGold.next() == 0x4adfb90f68c9eb9b, "SplitMix64 golden first")
     // MLX-backed PRNG.key / split need Metal metallib — covered by tier-1 XCTest only.
 
-    print("RLXCoreSmoke: all checks passed (rlx-swift \(RLXCore.version), RLXCore+MLX linked; PR-02+PR-03 Seed/SplitMix64 OK)")
+    // PR-04: DiscreteSpace Swift RNG path (no MLX key / eval)
+    let discrete = DiscreteSpace(n: 4, start: 1)
+    try expect(discrete.contains(1) && discrete.contains(4), "discrete contains ends")
+    try expect(!discrete.contains(0) && !discrete.contains(5), "discrete rejects OOB")
+    var spaceRng = SplitMix64(seed: 1)
+    let act = discrete.sample(using: &spaceRng)
+    try expect(discrete.contains(act), "discrete sample in range")
+    try expect(discrete.shape == nil && discrete.dtype == nil, "discrete non-tensor metadata")
+
+    print("RLXCoreSmoke: all checks passed (rlx-swift \(RLXCore.version), RLXCore+MLX linked; PR-02..PR-04 OK)")
     exit(0)
 } catch {
     let message = "RLXCoreSmoke FAILED: \(error)\n"
