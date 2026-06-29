@@ -1214,9 +1214,9 @@ Incremental, reviewable PRs for `rlx-swift` implementation. Each PR should merge
 
 ### PR-05 — MultiDiscrete, MultiBinary, Dict/Tuple spaces
 - **Title:** `feat(spaces): composite and multi spaces + flatten helpers`
-- **Affects:** `Sources/RLXCore/Spaces/*`, `SpaceFlatten.swift`
+- **Affects:** `Sources/RLXCore/AnySpace.swift`, `Spaces/Multi*.swift`, `DictSpace`, `TupleSpace`, `SpaceFlatten.swift`
 - **Depends on:** PR-04
-- **Description:** Composite membership/sample; deterministic key order for dict flatten.
+- **Description:** `AnySpace` eraser + kinds; MultiDiscrete `[Int]`; MultiBinary int32; Dict/Tuple with ordered keys; SpaceFlatten one-hot discrete + dense segments; dual RNG preserved.
 
 ### PR-06 — Environment protocol + type erasure
 - **Title:** `feat(core): Environment protocol and AnyEnvironment`

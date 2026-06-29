@@ -199,7 +199,21 @@ do {
     try expect(discrete.contains(act), "discrete sample in range")
     try expect(discrete.shape == nil && discrete.dtype == nil, "discrete non-tensor metadata")
 
-    print("RLXCoreSmoke: all checks passed (rlx-swift \(RLXCore.version), RLXCore+MLX linked; PR-02..PR-04 OK)")
+    
+    // PR-05: MultiDiscrete + Dict (Swift RNG / RNGBox only)
+    let multi = MultiDiscreteSpace(nvec: [2, 3])
+    try expect(multi.contains([0, 2]), "multi contains")
+    try expect(!multi.contains([0, 3]), "multi OOB")
+    var mr = SplitMix64(seed: 2)
+    let mv = multi.sample(using: &mr)
+    try expect(multi.contains(mv), "multi sample")
+    let dict = DictSpace([("a", AnySpace(DiscreteSpace(n: 2))), ("b", AnySpace(DiscreteSpace(n: 2)))])
+    let dbox = RNGBox(seed: 3)
+    let dv = dict.sample(box: dbox)
+    try expect(dict.contains(dv), "dict sample contains")
+    // SpaceFlatten / MultiBinary MLX paths need metallib — tier-1 XCTest only.
+
+    print("RLXCoreSmoke: all checks passed (rlx-swift \(RLXCore.version), RLXCore+MLX linked; PR-02..PR-05 OK)")
     exit(0)
 } catch {
     let message = "RLXCoreSmoke FAILED: \(error)\n"
