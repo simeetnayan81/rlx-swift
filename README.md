@@ -193,7 +193,7 @@ For full tests on a Mac:
 
 | Target | Role | Status |
 |--------|------|--------|
-| `RLXCore` | Protocols, spaces, results, seed, errors, registry | Spaces Discrete/Box (PR-04); Seed/PRNG (PR-03); results (PR-02) |
+| `RLXCore` | Protocols, spaces, results, seed, errors, registry | Spaces composite+flatten (PR-05); Discrete/Box (PR-04); Seed/PRNG (PR-03); results (PR-02) |
 | `RLXWrappers` | TimeLimit, transforms, order enforcement | Planned |
 | `RLXVector` | Sync / async vector envs | Planned |
 | `RLXEnvs` | Reference envs (CartPole, Pendulum, …) | Planned |
