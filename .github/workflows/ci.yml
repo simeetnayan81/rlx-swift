@@ -1,13 +1,25 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Cancel superseded runs on the same PR/ref so required checks reflect latest commits.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 # Tier-1: macOS xcodebuild (Metal). Tier-2: Linux CPU build + RLXCoreSmoke.
-# swift-tools-version: 6.0 — runner defaults are enough on both platforms.
+# Branch protection required status checks must use these exact job names:
+#   - "macOS"
+#   - "Linux (CPU smoke)"
+# Do not require "iOS (smoke)" (optional compile; continue-on-error).
 
 jobs:
   macos-test:
@@ -62,6 +74,7 @@ jobs:
       - name: Build and RLXCoreSmoke
         run: ./scripts/linux-smoke.sh
 
+  # Optional compile only — not a required status check.
   ios-build:
     name: iOS (smoke)
     runs-on: macos-15
