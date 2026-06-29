@@ -107,9 +107,47 @@ public final class AnySpace: @unchecked Sendable {
     }
 
     public func sample(key: MLXArray) -> Any { _sampleKey(key) }
+
+    public init(_ space: DictSpace) {
+        self.kind = .other
+        self._shape = space.shape
+        self._dtype = space.dtype
+        let captured = space
+        self._contains = { ($0 as? [String: Any]).map(captured.contains) ?? false }
+        self._sampleBox = { box in
+            var rng = box
+            return captured.sample(using: &rng)
+        }
+        self._sampleKey = { captured.sample(key: $0) }
+    }
+
+    public init(_ space: TupleSpace) {
+        self.kind = .other
+        self._shape = space.shape
+        self._dtype = space.dtype
+        let captured = space
+        self._contains = { ($0 as? [Any]).map(captured.contains) ?? false }
+        self._sampleBox = { box in
+            var rng = box
+            return captured.sample(using: &rng)
+        }
+        self._sampleKey = { captured.sample(key: $0) }
+    }
+
+    /// Erase any ``Space`` using known concrete overloads, else ``init(other:)``.
+    public static func erasing<S: Space>(_ space: S) -> AnySpace {
+        if let d = space as? DiscreteSpace { return AnySpace(d) }
+        if let b = space as? BoxSpace { return AnySpace(b) }
+        if let m = space as? MultiDiscreteSpace { return AnySpace(m) }
+        if let m = space as? MultiBinarySpace { return AnySpace(m) }
+        if let d = space as? DictSpace { return AnySpace(d) }
+        if let t = space as? TupleSpace { return AnySpace(t) }
+        return AnySpace(other: space)
+    }
 }
 
 /// Class-backed ``RandomNumberGenerator`` for multi-child sampling with one shared stream.
+
 public final class RNGBox: RandomNumberGenerator, @unchecked Sendable {
     private var base: any RandomNumberGenerator
 
