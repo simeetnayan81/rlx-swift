@@ -1220,9 +1220,9 @@ Incremental, reviewable PRs for `rlx-swift` implementation. Each PR should merge
 
 ### PR-06 — Environment protocol + type erasure
 - **Title:** `feat(core): Environment protocol and AnyEnvironment`
-- **Affects:** `Sources/RLXCore/Environment.swift`, `TypeErasure.swift` (`AnyEnvironment` / `AnySpace` eraser classes), `EnvSpec.swift`
+- **Affects:** `Sources/RLXCore/Environment.swift`, `AnyEnvironment.swift`, `EnvSpec.swift`; `AnySpace.erasing`
 - **Depends on:** PR-05
-- **Description:** Normative sync protocol methods; manual type erasers for registry; spec struct.
+- **Description:** Sync `Environment` + `ResetOptions` + `Renderable`; `EnvSpec`; `AnyEnvironment` eraser reusing `AnySpace`; lifecycle documented; tests use private CounterEnv stub (DummyEnv in PR-07).
 
 ### PR-07 — DummyEnv + OrderEnforcing + checkEnvironment
 - **Title:** `feat(testing): DummyEnv, OrderEnforcing, checkEnvironment`

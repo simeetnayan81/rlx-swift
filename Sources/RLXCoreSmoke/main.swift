@@ -213,7 +213,13 @@ do {
     try expect(dict.contains(dv), "dict sample contains")
     // SpaceFlatten / MultiBinary MLX paths need metallib — tier-1 XCTest only.
 
-    print("RLXCoreSmoke: all checks passed (rlx-swift \(RLXCore.version), RLXCore+MLX linked; PR-02..PR-05 OK)")
+    
+    // PR-06: EnvSpec (no live env on CLI — unit tests cover Environment / AnyEnvironment)
+    let espec = EnvSpec(id: "Smoke-v0", maxEpisodeSteps: 10, version: 1)
+    try expect(espec.id == "Smoke-v0" && espec.maxEpisodeSteps == 10, "EnvSpec fields")
+    try expect(espec.nondeterministic == false, "EnvSpec default deterministic")
+
+    print("RLXCoreSmoke: all checks passed (rlx-swift \(RLXCore.version), RLXCore+MLX linked; PR-02..PR-06 OK)")
     exit(0)
 } catch {
     let message = "RLXCoreSmoke FAILED: \(error)\n"
