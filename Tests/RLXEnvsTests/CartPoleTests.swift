@@ -135,6 +135,6 @@ final class CartPoleTests: XCTestCase {
     func testRegisterDefaultsIncludesCartPoleAndDummy() throws {
         let reg = EnvironmentRegistry()
         try RLXEnvsRegistration.registerDefaults(on: reg)
-        XCTAssertEqual(reg.ids.sorted(), ["CartPole-v1", "DummyEnv-v0"])
+        XCTAssertEqual(reg.ids.sorted(), ["CartPole-v1", "DummyEnv-v0", "Pendulum-v1"])
     }
 }
