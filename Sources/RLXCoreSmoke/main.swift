@@ -1,9 +1,12 @@
-// Tier-2 smoke: links RLXCore + exercises PR-02/PR-03 types without MLXArray eval
-// (avoids Metal/runtime resource issues on CLI and Linux CPU toolchains).
-// Tier-1 XCTest (incl. MLX key equality) runs via xcodebuild on macOS.
+// Tier-2 smoke: links RLXCore (+ RLXEnvs / RLXWrappers / RLXTesting after PR-07+) and
+// exercises types without relying on Metal metallib / MLXArray eval where possible.
+// Tier-1 XCTest (MLX key equality, Box clip/rescale tensors) runs via xcodebuild on macOS.
 
 import Foundation
 import RLXCore
+import RLXEnvs
+import RLXWrappers
+import RLXTesting
 
 enum SmokeFailure: Error, CustomStringConvertible {
     case message(String)
@@ -199,7 +202,6 @@ do {
     try expect(discrete.contains(act), "discrete sample in range")
     try expect(discrete.shape == nil && discrete.dtype == nil, "discrete non-tensor metadata")
 
-    
     // PR-05: MultiDiscrete + Dict (Swift RNG / RNGBox only)
     let multi = MultiDiscreteSpace(nvec: [2, 3])
     try expect(multi.contains([0, 2]), "multi contains")
@@ -213,13 +215,117 @@ do {
     try expect(dict.contains(dv), "dict sample contains")
     // SpaceFlatten / MultiBinary MLX paths need metallib — tier-1 XCTest only.
 
-    
-    // PR-06: EnvSpec (no live env on CLI — unit tests cover Environment / AnyEnvironment)
+    // PR-06: EnvSpec + Environment protocol surface via DummyEnv (PR-07) / AnyEnvironment
     let espec = EnvSpec(id: "Smoke-v0", maxEpisodeSteps: 10, version: 1)
     try expect(espec.id == "Smoke-v0" && espec.maxEpisodeSteps == 10, "EnvSpec fields")
     try expect(espec.nondeterministic == false, "EnvSpec default deterministic")
 
-    print("RLXCoreSmoke: all checks passed (rlx-swift \(RLXCore.version), RLXCore+MLX linked; PR-02..PR-06 OK)")
+    // PR-07: DummyEnv lifecycle (Int / Discrete — no MLX eval)
+    let dummy = DummyEnv(observationN: 5, actionN: 5, episodeLength: 3)
+    try expect(dummy.spec?.id == "DummyEnv-v0", "DummyEnv id")
+    do {
+        _ = try dummy.step(0)
+        throw SmokeFailure.message("expected notReset before reset")
+    } catch let err as EnvironmentError where err == .notReset {
+        // ok
+    }
+    let r0 = try dummy.reset(seed: UInt64(7), options: nil)
+    try expect(r0.observation == 0, "DummyEnv reset obs")
+    _ = try dummy.step(1)
+    _ = try dummy.step(1)
+    let lastDummy = try dummy.step(1)
+    try expect(lastDummy.terminated && !lastDummy.truncated, "DummyEnv terminates at length")
+    do {
+        _ = try dummy.step(0)
+        throw SmokeFailure.message("expected episodeEnded after terminal")
+    } catch let err as EnvironmentError where err == .episodeEnded {
+        // ok
+    }
+    try dummy.close()
+    try dummy.close() // idempotent
+    do {
+        _ = try dummy.reset()
+        throw SmokeFailure.message("expected closed after close")
+    } catch let err as EnvironmentError where err == .closed {
+        // ok
+    }
+
+    // AnyEnvironment boxing (Int actions — no tensor eval)
+    let anyEnv = AnyEnvironment(DummyEnv(episodeLength: 2))
+    try expect(anyEnv.spec?.id == "DummyEnv-v0", "AnyEnvironment forwards spec")
+    _ = try anyEnv.reset(seed: Seed(1))
+    let anyStep = try anyEnv.step(2)
+    try expect(anyStep.observation as? Int == 2, "AnyEnvironment step obs")
+    try expect(anyStep.reward == 2, "AnyEnvironment reward")
+    try anyEnv.close()
+
+    // OrderEnforcing (PR-07)
+    let ordered = OrderEnforcing(DummyEnv(episodeLength: 2))
+    do {
+        _ = try ordered.step(0)
+        throw SmokeFailure.message("OrderEnforcing should throw notReset")
+    } catch let err as EnvironmentError where err == .notReset {
+        // ok
+    }
+    _ = try ordered.reset()
+    _ = try ordered.step(0)
+    let ordLast = try ordered.step(0)
+    try expect(ordLast.done, "OrderEnforcing episode done")
+    do {
+        _ = try ordered.step(0)
+        throw SmokeFailure.message("OrderEnforcing should throw episodeEnded")
+    } catch let err as EnvironmentError where err == .episodeEnded {
+        // ok
+    }
+    try ordered.close()
+
+    // checkEnvironment (PR-07) — Discrete sampling only
+    try checkEnvironment(
+        { DummyEnv(episodeLength: 4) },
+        options: CheckEnvironmentOptions(episodes: 2, seed: 11, enforceOrder: true)
+    )
+
+    // PR-08: InfoKeys, TimeLimit, RecordEpisodeStatistics
+    try expect(InfoKeys.timeLimitTruncated == "TimeLimit.truncated", "InfoKeys TimeLimit")
+    try expect(InfoKeys.episode == "episode", "InfoKeys episode")
+    try expect(InfoKeys.episodeReturn == "r" && InfoKeys.episodeLength == "l", "InfoKeys r/l")
+
+    // Long DummyEnv so TimeLimit truncates first (no task termination).
+    let limited = RecordEpisodeStatistics(
+        TimeLimit(DummyEnv(episodeLength: 100), maxEpisodeSteps: 3)
+    )
+    _ = try limited.reset()
+    _ = try limited.step(1)
+    _ = try limited.step(1)
+    let limLast = try limited.step(1)
+    try expect(limLast.truncated && !limLast.terminated, "TimeLimit truncates without terminate")
+    try expect(limLast.info[InfoKeys.timeLimitTruncated] == .bool(true), "TimeLimit.truncated info")
+    guard case .nested(let epStats)? = limLast.info[InfoKeys.episode] else {
+        throw SmokeFailure.message("expected episode stats on truncation")
+    }
+    try expect(epStats[InfoKeys.episodeLength] == .int(3), "episode length 3")
+    try expect(epStats[InfoKeys.episodeReturn] == .double(3), "episode return 3")
+    try limited.close()
+
+    // PR-09: TransformObservation / TransformReward (pure Int / Float — no MLX)
+    let transformed = TransformReward(
+        TransformObservation(
+            DummyEnv(observationN: 5, actionN: 5, episodeLength: 3),
+            observationSpace: DiscreteSpace(n: 20)
+        ) { $0 * 2 }
+    ) { $0 * 10 }
+    let tr = try transformed.reset()
+    try expect(tr.observation == 0, "transform reset")
+    let ts = try transformed.step(2)
+    try expect(ts.observation == 4, "transform obs doubled")
+    try expect(ts.reward == 20, "transform reward *10")
+    try transformed.close()
+    // ClipAction / RescaleAction use MLXArray ops — tier-1 XCTest only (Metal/CPU eval).
+
+    print(
+        "RLXCoreSmoke: all checks passed (rlx-swift \(RLXCore.version), "
+            + "RLXCore+RLXEnvs+RLXWrappers+RLXTesting; PR-02..PR-09 OK)"
+    )
     exit(0)
 } catch {
     let message = "RLXCoreSmoke FAILED: \(error)\n"
