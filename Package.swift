@@ -18,6 +18,18 @@ let package = Package(
             name: "RLXCore",
             targets: ["RLXCore"]
         ),
+        .library(
+            name: "RLXWrappers",
+            targets: ["RLXWrappers"]
+        ),
+        .library(
+            name: "RLXEnvs",
+            targets: ["RLXEnvs"]
+        ),
+        .library(
+            name: "RLXTesting",
+            targets: ["RLXTesting"]
+        ),
     ],
     dependencies: [
         // Pin mlx-swift; platforms/tools-version inherit from this pin (design.md §27.2).
@@ -31,6 +43,21 @@ let package = Package(
             ],
             path: "Sources/RLXCore"
         ),
+        .target(
+            name: "RLXWrappers",
+            dependencies: ["RLXCore"],
+            path: "Sources/RLXWrappers"
+        ),
+        .target(
+            name: "RLXEnvs",
+            dependencies: ["RLXCore"],
+            path: "Sources/RLXEnvs"
+        ),
+        .target(
+            name: "RLXTesting",
+            dependencies: ["RLXCore", "RLXWrappers"],
+            path: "Sources/RLXTesting"
+        ),
         .testTarget(
             name: "RLXCoreTests",
             dependencies: [
@@ -38,6 +65,21 @@ let package = Package(
                 .product(name: "MLX", package: "mlx-swift"),
             ],
             path: "Tests/RLXCoreTests"
+        ),
+        .testTarget(
+            name: "RLXWrappersTests",
+            dependencies: ["RLXWrappers", "RLXEnvs"],
+            path: "Tests/RLXWrappersTests"
+        ),
+        .testTarget(
+            name: "RLXEnvsTests",
+            dependencies: ["RLXEnvs", "RLXCore"],
+            path: "Tests/RLXEnvsTests"
+        ),
+        .testTarget(
+            name: "RLXTestingTests",
+            dependencies: ["RLXTesting", "RLXEnvs", "RLXWrappers"],
+            path: "Tests/RLXTestingTests"
         ),
         // Local/CI-independent smoke executable (no XCTest / Metal runtime required).
         .executableTarget(
