@@ -2,9 +2,11 @@
 
 import RLXCore
 
-/// Outcome of ``SyncVectorEnv/reset(seed:options:)``.
-/// Not `Sendable`: observations are type-erased `Any` (may hold `MLXArray`).
-public struct VectorResetResult {
+/// Outcome of vector `reset` (``SyncVectorEnv`` / ``AsyncVectorEnv``).
+///
+/// `@unchecked Sendable` so results can leave ``AsyncVectorEnv``’s actor isolation.
+/// Observations are type-erased `Any` (may hold `MLXArray`); treat as single-task owned.
+public struct VectorResetResult: @unchecked Sendable {
     /// One observation per sub-environment (type-erased).
     public var observations: [Any]
     /// Per-env info bags (same count as observations).
@@ -17,9 +19,11 @@ public struct VectorResetResult {
     }
 }
 
-/// Outcome of ``SyncVectorEnv/step(_:)``.
-/// Not `Sendable`: observations are type-erased `Any` (may hold `MLXArray`).
-public struct VectorStepResult {
+/// Outcome of vector `step` (``SyncVectorEnv`` / ``AsyncVectorEnv``).
+///
+/// `@unchecked Sendable` so results can leave ``AsyncVectorEnv``’s actor isolation.
+/// Observations are type-erased `Any` (may hold `MLXArray`); treat as single-task owned.
+public struct VectorStepResult: @unchecked Sendable {
     public var observations: [Any]
     public var rewards: [Float]
     public var terminateds: [Bool]

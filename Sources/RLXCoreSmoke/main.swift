@@ -24,6 +24,31 @@ func expect(_ condition: @autoclosure () -> Bool, _ message: String) throws {
     if !condition() { throw SmokeFailure.message(message) }
 }
 
+/// Drive an `async` body from the sync smoke `main` (DispatchSemaphore).
+func runBlocking<T: Sendable>(_ body: @Sendable @escaping () async throws -> T) throws -> T {
+    let sem = DispatchSemaphore(value: 0)
+    let box = BlockingResultBox<T>()
+    Task {
+        do {
+            box.set(.success(try await body()))
+        } catch {
+            box.set(.failure(error))
+        }
+        sem.signal()
+    }
+    sem.wait()
+    return try box.get()
+}
+
+private final class BlockingResultBox<T: Sendable>: @unchecked Sendable {
+    private var result: Result<T, Error>?
+    func set(_ result: Result<T, Error>) { self.result = result }
+    func get() throws -> T {
+        guard let result else { throw SmokeFailure.message("runBlocking: missing result") }
+        return try result.get()
+    }
+}
+
 do {
     // Identity
     try expect(!RLXCore.version.isEmpty, "RLXCore.version must be non-empty")
@@ -357,6 +382,20 @@ do {
     try expect(vs.terminateds[0] && vs.terminateds[1], "vector sameStep terminations")
     try expect(vs.observations[0] as? Int == 0, "vector live obs after sameStep reset")
     try vec.close()
+
+    // AsyncVectorEnv (maxConcurrency: 1 for deterministic smoke)
+    let avec = AsyncVectorEnv(numEnvs: 2, autoresetMode: .sameStep, maxConcurrency: 1) {
+        AnyEnvironment(DummyEnv(episodeLength: 1))
+    }
+    let (asyncTerminated, asyncLiveObs): (Bool, Int?) = try runBlocking {
+        _ = try await avec.reset(seed: 1)
+        let step = try await avec.step([1, 1])
+        try await avec.close()
+        let term = step.terminateds[0] && step.terminateds[1]
+        return (term, step.observations[0] as? Int)
+    }
+    try expect(asyncTerminated, "async vector terminations")
+    try expect(asyncLiveObs == 0, "async vector live obs after sameStep")
 
     print("RLXCoreSmoke: all checks passed (rlx-swift \(RLXCore.version))")
     exit(0)
