@@ -37,7 +37,29 @@ xcodebuild test -scheme rlx-swift-Package -destination 'platform=macOS'   # full
 # or: ./scripts/xcodebuild-test.sh
 ```
 
-**Before pushing library changes**, run the full matrix:
+### Git pre-commit (lint + unit tests)
+
+After cloning, enable hooks once:
+
+```bash
+./scripts/install-git-hooks.sh   # sets core.hooksPath=.githooks
+```
+
+Each commit then runs `./scripts/pre-commit.sh`:
+
+1. Basic staged-file checks (tabs in Swift, trailing whitespace)
+2. **SwiftLint** if installed (`brew install swiftlint`) — optional
+3. **`swift build`**
+4. **Unit tests** on macOS via `./scripts/xcodebuild-test.sh` (smoke / Linux Docker / iOS **not** run)
+
+| Escape hatch | Effect |
+|--------------|--------|
+| `SKIP_PRECOMMIT=1 git commit ...` | Skip the whole hook |
+| `PRECOMMIT_SKIP_TESTS=1 git commit ...` | Lint + build only (no XCTest) |
+
+Docs-only commits skip build/tests when no `Sources/`, `Tests/`, or `Package.swift` is staged.
+
+**Before pushing library changes**, still run the full matrix when you need smoke / Linux / iOS:
 
 ```bash
 ./scripts/verify-all.sh   # build + smoke + macOS XCTest + Linux Docker smoke + iOS Simulator build

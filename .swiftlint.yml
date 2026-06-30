@@ -1,0 +1,26 @@
+# Optional: enabled when `swiftlint` is on PATH (pre-commit / CI).
+# Install: brew install swiftlint
+
+included:
+  - Sources
+  - Tests
+
+excluded:
+  - .build
+  - .swiftpm
+
+disabled_rules:
+  - trailing_whitespace  # enforced simply in pre-commit for staged files
+  - line_length
+  - todo
+  - type_body_length
+  - file_length
+  - function_body_length
+  - cyclomatic_complexity
+  - identifier_name
+
+opt_in_rules:
+  - empty_count
+  - closure_spacing
+
+reporter: "xcode"
