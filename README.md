@@ -32,9 +32,15 @@ dependencies: [
 ### macOS
 
 ```bash
-swift build && swift run RLXCoreSmoke          # link smoke (no Metal runtime eval)
+swift build && swift run RLXCoreSmoke          # CLI smoke (core + envs + wrappers + checkEnvironment)
 xcodebuild test -scheme rlx-swift-Package -destination 'platform=macOS'   # full tests (Metal)
 # or: ./scripts/xcodebuild-test.sh
+```
+
+**Before pushing library changes**, run the full matrix:
+
+```bash
+./scripts/verify-all.sh   # build + smoke + macOS XCTest + Linux Docker smoke + iOS Simulator build
 ```
 
 ### Linux
@@ -43,6 +49,8 @@ See [Building on Linux](#building-on-linux) below, or run:
 
 ```bash
 ./scripts/linux-smoke.sh
+# from macOS with Docker:
+./scripts/linux-smoke-docker.sh
 ```
 
 ## Building on Linux

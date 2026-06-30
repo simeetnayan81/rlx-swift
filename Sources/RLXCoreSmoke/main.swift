@@ -1,6 +1,8 @@
-// CLI / Linux smoke executable: links RLXCore, RLXEnvs, RLXWrappers, RLXTesting and
-// exercises stable APIs on paths that do not require Metal metallib / MLXArray eval.
-// Full XCTest (including MLX-backed sampling and Box clip/rescale) runs via xcodebuild.
+// CLI / Linux smoke executable: links RLXCore, RLXEnvs, RLXWrappers, RLXTesting.
+// Uses Discrete / Int / pure-Swift paths only (no MLXArray ops — Metal metallib
+// is unavailable on Linux and often on `swift run` without Xcode app context).
+// Box ClipAction / RescaleAction are covered by XCTest via xcodebuild on macOS.
+// Full matrix: `./scripts/verify-all.sh`
 
 import Foundation
 import RLXCore
@@ -320,7 +322,7 @@ do {
     try expect(ts.observation == 4, "transform obs doubled")
     try expect(ts.reward == 20, "transform reward *10")
     try transformed.close()
-    // ClipAction / RescaleAction use MLXArray ops — covered by XCTest on macOS.
+    // ClipAction / RescaleAction require MLXArray evaluation — XCTest on macOS only.
 
     print("RLXCoreSmoke: all checks passed (rlx-swift \(RLXCore.version))")
     exit(0)

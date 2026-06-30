@@ -17,6 +17,7 @@ private final class BoxIdentityEnv: Environment {
     let actionSpace: BoxSpace
 
     private var hasReset = false
+    private var isClosed = false
     private var steps = 0
     private let episodeLength: Int
 
@@ -27,6 +28,7 @@ private final class BoxIdentityEnv: Environment {
     }
 
     func reset(seed: UInt64?, options: (any ResetOptions)?) throws -> ResetResult<MLXArray> {
+        if isClosed { throw EnvironmentError.closed }
         _ = seed
         _ = options
         hasReset = true
@@ -36,6 +38,7 @@ private final class BoxIdentityEnv: Environment {
     }
 
     func step(_ action: MLXArray) throws -> StepResult<MLXArray> {
+        if isClosed { throw EnvironmentError.closed }
         if !hasReset { throw EnvironmentError.notReset }
         steps += 1
         let reward: Float = Device.withDefaultDevice(.cpu) {
@@ -51,7 +54,9 @@ private final class BoxIdentityEnv: Environment {
         )
     }
 
-    func close() throws {}
+    func close() throws {
+        isClosed = true
+    }
 }
 
 private func floats(_ a: MLXArray) -> [Float] {
@@ -121,6 +126,25 @@ final class RescaleActionTests: XCTestCase {
         XCTAssertEqual(floats(env.actionSpace.low), [-1, -1])
         XCTAssertEqual(floats(env.actionSpace.high), [1, 1])
         XCTAssertEqual(floats(env.inner.actionSpace.low), [0, 0])
+    }
+
+    func testExplicitPolicyActionSpaceInit() throws {
+        let inner = BoxIdentityEnv(low: 0, high: 4, shape: [1])
+        let policy = BoxSpace(low: -2, high: 2, shape: [1])
+        let env = RescaleAction(inner, policyActionSpace: policy)
+        _ = try env.reset()
+        // policy -2 → env 0; policy 2 → env 4
+        XCTAssertEqual(floats(try env.step(MLXArray([Float(-2)])).observation)[0], 0, accuracy: 1e-4)
+        XCTAssertEqual(floats(try env.step(MLXArray([Float(2)])).observation)[0], 4, accuracy: 1e-4)
+    }
+
+    func testCloseForwardsThroughClipAndRescale() throws {
+        let env = ClipAction(RescaleAction(BoxIdentityEnv(low: -1, high: 1, shape: [1]), min: -1, max: 1))
+        _ = try env.reset()
+        try env.close()
+        XCTAssertThrowsError(try env.reset()) { err in
+            XCTAssertEqual(err as? EnvironmentError, .closed)
+        }
     }
 }
 
