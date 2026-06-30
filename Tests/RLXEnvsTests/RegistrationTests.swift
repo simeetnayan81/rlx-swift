@@ -8,6 +8,7 @@ final class RegistrationTests: XCTestCase {
         let reg = EnvironmentRegistry()
         try RLXEnvsRegistration.registerDefaults(on: reg)
         XCTAssertTrue(reg.ids.contains("DummyEnv-v0"))
+        XCTAssertTrue(reg.ids.contains("CartPole-v1"))
         XCTAssertEqual(reg.spec(for: "DummyEnv-v0")?.id, "DummyEnv-v0")
 
         let env = try reg.make("DummyEnv-v0")
@@ -33,7 +34,13 @@ final class RegistrationTests: XCTestCase {
         let reg = EnvironmentRegistry()
         try RLXEnvsRegistration.registerDefaults(on: reg)
         XCTAssertThrowsError(try RLXEnvsRegistration.registerDefaults(on: reg)) { err in
-            XCTAssertEqual(err as? RegistryError, .duplicateID("DummyEnv-v0"))
+            // First id that fails may be DummyEnv or CartPole depending on order
+            guard let re = err as? RegistryError else {
+                return XCTFail("\(err)")
+            }
+            guard case .duplicateID = re else {
+                return XCTFail("expected duplicateID, got \(re)")
+            }
         }
     }
 }

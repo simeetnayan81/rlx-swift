@@ -1,11 +1,19 @@
 // Registration — default factories into EnvironmentRegistry (design.md §18.1).
 
 import RLXCore
+import RLXWrappers
 
-/// Registers built-in toy / debug envs. Safe to call once; second call throws ``RegistryError/duplicateID``.
+/// Registers built-in envs. Safe to call once per registry; second call throws ``RegistryError/duplicateID``.
 public enum RLXEnvsRegistration {
-    /// Register ``DummyEnv`` as `"DummyEnv-v0"` on ``EnvironmentRegistry/shared``.
+    /// Register ``DummyEnv`` and ``CartPoleEnv`` on the given registry (default: ``EnvironmentRegistry/shared``).
     public static func registerDefaults(
+        on registry: EnvironmentRegistry = .shared
+    ) throws {
+        try registerDummyEnv(on: registry)
+        try registerCartPole(on: registry)
+    }
+
+    public static func registerDummyEnv(
         on registry: EnvironmentRegistry = .shared
     ) throws {
         let spec = EnvSpec(
@@ -21,5 +29,33 @@ public enum RLXEnvsRegistration {
             return AnyEnvironment(DummyEnv())
         }
         try registry.register(id: "DummyEnv-v0", spec: spec, factory: factory)
+    }
+
+    public static func registerCartPole(
+        on registry: EnvironmentRegistry = .shared
+    ) throws {
+        let spec = EnvSpec(
+            id: "CartPole-v1",
+            maxEpisodeSteps: 500,
+            rewardThreshold: 475,
+            nondeterministic: false,
+            defaultRenderMode: RenderMode.none,
+            version: 1
+        )
+        let factory = ClosureEnvironmentFactory { config, renderMode in
+            let cfg: CartPoleConfig
+            if let config {
+                guard let c = config as? CartPoleConfig else {
+                    throw RegistryError.invalidConfig(
+                        "CartPole-v1 expects CartPoleConfig, got \(type(of: config))"
+                    )
+                }
+                cfg = c
+            } else {
+                cfg = .default
+            }
+            return CartPoleEnv.makeAny(config: cfg, renderMode: renderMode)
+        }
+        try registry.register(id: "CartPole-v1", spec: spec, factory: factory)
     }
 }
