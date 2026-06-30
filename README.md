@@ -6,7 +6,7 @@ Reinforcement learning infrastructure for Swift, built on [mlx-swift](https://gi
 
 It is **not** an algorithms package. Policies, losses, and optimizers live in separate targets/packages (`MLXNN`, `MLXOptimizers`, future `rlx-swift-algorithms`).
 
-> **Status:** Core result types (`StepResult`, `ResetResult`, `Info`, `EnvironmentError`, `RenderMode`). See [design.md](design.md) for architecture, API contracts, and the PR implementation plan.
+> **Status:** **0.1.0** — environment substrate on mlx-swift (`RLXCore`, `RLXWrappers`, `RLXEnvs` with DummyEnv / CartPole-v1 / Pendulum-v1, `RLXTesting`). Not an algorithms package. See [design.md](design.md).
 
 ## Requirements
 
@@ -24,9 +24,10 @@ It is **not** an algorithms package. Policies, losses, and optimizers live in se
 ```swift
 // Package.swift
 dependencies: [
-    .package(url: "https://github.com/<org>/rlx-swift", from: "0.1.0"),
+    .package(url: "https://github.com/simeetnayan81/rlx-swift", from: "0.1.0"),
 ],
-// target dependency: .product(name: "RLXCore", package: "rlx-swift")
+// Products: RLXCore, RLXWrappers, RLXEnvs, RLXTesting
+// e.g. .product(name: "RLXCore", package: "rlx-swift")
 ```
 
 ### macOS
@@ -139,7 +140,7 @@ These packages match [mlx-swift’s Linux CI setup](https://github.com/ml-explor
 From the repo root:
 
 ```bash
-git clone https://github.com/<org>/rlx-swift.git
+git clone https://github.com/simeetnayan81/rlx-swift.git
 cd rlx-swift
 
 swift package resolve
