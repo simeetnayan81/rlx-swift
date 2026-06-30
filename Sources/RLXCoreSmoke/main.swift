@@ -1,9 +1,14 @@
-// Tier-2 smoke: links RLXCore + exercises PR-02/PR-03 types without MLXArray eval
-// (avoids Metal/runtime resource issues on CLI and Linux CPU toolchains).
-// Tier-1 XCTest (incl. MLX key equality) runs via xcodebuild on macOS.
+// CLI / Linux smoke executable: links RLXCore, RLXEnvs, RLXWrappers, RLXTesting.
+// Uses Discrete / Int / pure-Swift paths only (no MLXArray ops — Metal metallib
+// is unavailable on Linux and often on `swift run` without Xcode app context).
+// Box ClipAction / RescaleAction are covered by XCTest via xcodebuild on macOS.
+// Full matrix: `./scripts/verify-all.sh`
 
 import Foundation
 import RLXCore
+import RLXEnvs
+import RLXWrappers
+import RLXTesting
 
 enum SmokeFailure: Error, CustomStringConvertible {
     case message(String)
@@ -172,7 +177,7 @@ do {
     let decoded = try JSONDecoder().decode(RenderMode.self, from: encoded)
     try expect(decoded == .human, "RenderMode Codable")
 
-    // PR-03: Seed + SplitMix64 (pure Swift; no MLX eval)
+    // Seed + SplitMix64 (pure Swift; no MLX eval)
     let seed = Seed(42)
     try expect(seed.rawValue == 42 && seed.uint64 == 42, "Seed rawValue")
     try expect(Seed(rawValue: 42) == seed, "Seed equality")
@@ -188,9 +193,9 @@ do {
     try expect(sm0.next() == sm1.next(), "SplitMix64 reproducibility")
     var smGold = SplitMix64(seed: 0xDEAD_BEEF)
     try expect(smGold.next() == 0x4adfb90f68c9eb9b, "SplitMix64 golden first")
-    // MLX-backed PRNG.key / split need Metal metallib — covered by tier-1 XCTest only.
+    // MLX-backed PRNG.key / split need Metal metallib — covered by XCTest on macOS.
 
-    // PR-04: DiscreteSpace Swift RNG path (no MLX key / eval)
+    // DiscreteSpace Swift RNG path (no MLX key / eval)
     let discrete = DiscreteSpace(n: 4, start: 1)
     try expect(discrete.contains(1) && discrete.contains(4), "discrete contains ends")
     try expect(!discrete.contains(0) && !discrete.contains(5), "discrete rejects OOB")
@@ -199,8 +204,7 @@ do {
     try expect(discrete.contains(act), "discrete sample in range")
     try expect(discrete.shape == nil && discrete.dtype == nil, "discrete non-tensor metadata")
 
-    
-    // PR-05: MultiDiscrete + Dict (Swift RNG / RNGBox only)
+    // MultiDiscrete + Dict (Swift RNG / RNGBox only)
     let multi = MultiDiscreteSpace(nvec: [2, 3])
     try expect(multi.contains([0, 2]), "multi contains")
     try expect(!multi.contains([0, 3]), "multi OOB")
@@ -211,15 +215,116 @@ do {
     let dbox = RNGBox(seed: 3)
     let dv = dict.sample(box: dbox)
     try expect(dict.contains(dv), "dict sample contains")
-    // SpaceFlatten / MultiBinary MLX paths need metallib — tier-1 XCTest only.
+    // SpaceFlatten / MultiBinary MLX paths need metallib — XCTest on macOS.
 
-    
-    // PR-06: EnvSpec (no live env on CLI — unit tests cover Environment / AnyEnvironment)
+    // EnvSpec
     let espec = EnvSpec(id: "Smoke-v0", maxEpisodeSteps: 10, version: 1)
     try expect(espec.id == "Smoke-v0" && espec.maxEpisodeSteps == 10, "EnvSpec fields")
     try expect(espec.nondeterministic == false, "EnvSpec default deterministic")
 
-    print("RLXCoreSmoke: all checks passed (rlx-swift \(RLXCore.version), RLXCore+MLX linked; PR-02..PR-06 OK)")
+    // DummyEnv lifecycle (Int / Discrete — no MLX eval)
+    let dummy = DummyEnv(observationN: 5, actionN: 5, episodeLength: 3)
+    try expect(dummy.spec?.id == "DummyEnv-v0", "DummyEnv id")
+    do {
+        _ = try dummy.step(0)
+        throw SmokeFailure.message("expected notReset before reset")
+    } catch let err as EnvironmentError where err == .notReset {
+        // ok
+    }
+    let r0 = try dummy.reset(seed: UInt64(7), options: nil)
+    try expect(r0.observation == 0, "DummyEnv reset obs")
+    _ = try dummy.step(1)
+    _ = try dummy.step(1)
+    let lastDummy = try dummy.step(1)
+    try expect(lastDummy.terminated && !lastDummy.truncated, "DummyEnv terminates at length")
+    do {
+        _ = try dummy.step(0)
+        throw SmokeFailure.message("expected episodeEnded after terminal")
+    } catch let err as EnvironmentError where err == .episodeEnded {
+        // ok
+    }
+    try dummy.close()
+    try dummy.close() // idempotent
+    do {
+        _ = try dummy.reset()
+        throw SmokeFailure.message("expected closed after close")
+    } catch let err as EnvironmentError where err == .closed {
+        // ok
+    }
+
+    // AnyEnvironment boxing (Int actions — no tensor eval)
+    let anyEnv = AnyEnvironment(DummyEnv(episodeLength: 2))
+    try expect(anyEnv.spec?.id == "DummyEnv-v0", "AnyEnvironment forwards spec")
+    _ = try anyEnv.reset(seed: Seed(1))
+    let anyStep = try anyEnv.step(2)
+    try expect(anyStep.observation as? Int == 2, "AnyEnvironment step obs")
+    try expect(anyStep.reward == 2, "AnyEnvironment reward")
+    try anyEnv.close()
+
+    // OrderEnforcing
+    let ordered = OrderEnforcing(DummyEnv(episodeLength: 2))
+    do {
+        _ = try ordered.step(0)
+        throw SmokeFailure.message("OrderEnforcing should throw notReset")
+    } catch let err as EnvironmentError where err == .notReset {
+        // ok
+    }
+    _ = try ordered.reset()
+    _ = try ordered.step(0)
+    let ordLast = try ordered.step(0)
+    try expect(ordLast.done, "OrderEnforcing episode done")
+    do {
+        _ = try ordered.step(0)
+        throw SmokeFailure.message("OrderEnforcing should throw episodeEnded")
+    } catch let err as EnvironmentError where err == .episodeEnded {
+        // ok
+    }
+    try ordered.close()
+
+    // checkEnvironment — Discrete sampling only
+    try checkEnvironment(
+        { DummyEnv(episodeLength: 4) },
+        options: CheckEnvironmentOptions(episodes: 2, seed: 11, enforceOrder: true)
+    )
+
+    // InfoKeys, TimeLimit, RecordEpisodeStatistics
+    try expect(InfoKeys.timeLimitTruncated == "TimeLimit.truncated", "InfoKeys TimeLimit")
+    try expect(InfoKeys.episode == "episode", "InfoKeys episode")
+    try expect(InfoKeys.episodeReturn == "r" && InfoKeys.episodeLength == "l", "InfoKeys r/l")
+
+    // Long DummyEnv so TimeLimit truncates first (no task termination).
+    let limited = RecordEpisodeStatistics(
+        TimeLimit(DummyEnv(episodeLength: 100), maxEpisodeSteps: 3)
+    )
+    _ = try limited.reset()
+    _ = try limited.step(1)
+    _ = try limited.step(1)
+    let limLast = try limited.step(1)
+    try expect(limLast.truncated && !limLast.terminated, "TimeLimit truncates without terminate")
+    try expect(limLast.info[InfoKeys.timeLimitTruncated] == .bool(true), "TimeLimit.truncated info")
+    guard case .nested(let epStats)? = limLast.info[InfoKeys.episode] else {
+        throw SmokeFailure.message("expected episode stats on truncation")
+    }
+    try expect(epStats[InfoKeys.episodeLength] == .int(3), "episode length 3")
+    try expect(epStats[InfoKeys.episodeReturn] == .double(3), "episode return 3")
+    try limited.close()
+
+    // TransformObservation / TransformReward (pure Int / Float — no MLX)
+    let transformed = TransformReward(
+        TransformObservation(
+            DummyEnv(observationN: 5, actionN: 5, episodeLength: 3),
+            observationSpace: DiscreteSpace(n: 20)
+        ) { $0 * 2 }
+    ) { $0 * 10 }
+    let tr = try transformed.reset()
+    try expect(tr.observation == 0, "transform reset")
+    let ts = try transformed.step(2)
+    try expect(ts.observation == 4, "transform obs doubled")
+    try expect(ts.reward == 20, "transform reward *10")
+    try transformed.close()
+    // ClipAction / RescaleAction require MLXArray evaluation — XCTest on macOS only.
+
+    print("RLXCoreSmoke: all checks passed (rlx-swift \(RLXCore.version))")
     exit(0)
 } catch {
     let message = "RLXCoreSmoke FAILED: \(error)\n"
