@@ -7,8 +7,8 @@ import MLX
 
 /// Package identity marker for tests and diagnostics.
 public enum RLXCore {
-    /// Semantic version of the `rlx-swift` package (scaffold placeholder).
-    public static let version = "0.1.0-dev"
+    /// Semantic version of the `rlx-swift` package (matches the git release tag).
+    public static let version = "0.1.0"
 
     /// Confirms the MLX product is linked and usable from RLXCore.
     ///
