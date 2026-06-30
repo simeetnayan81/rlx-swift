@@ -329,6 +329,7 @@ do {
     try RLXEnvsRegistration.registerDefaults(on: reg)
     try expect(reg.ids.contains("DummyEnv-v0"), "registry lists DummyEnv-v0")
     try expect(reg.ids.contains("CartPole-v1"), "registry lists CartPole-v1")
+    try expect(reg.ids.contains("Pendulum-v1"), "registry lists Pendulum-v1")
     try expect(reg.spec(for: "CartPole-v1")?.maxEpisodeSteps == 500, "CartPole max steps in spec")
     let made = try reg.make("DummyEnv-v0")
     _ = try made.reset()
