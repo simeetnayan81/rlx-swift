@@ -328,11 +328,14 @@ do {
     let reg = EnvironmentRegistry()
     try RLXEnvsRegistration.registerDefaults(on: reg)
     try expect(reg.ids.contains("DummyEnv-v0"), "registry lists DummyEnv-v0")
+    try expect(reg.ids.contains("CartPole-v1"), "registry lists CartPole-v1")
+    try expect(reg.spec(for: "CartPole-v1")?.maxEpisodeSteps == 500, "CartPole max steps in spec")
     let made = try reg.make("DummyEnv-v0")
     _ = try made.reset()
     let madeStep = try made.step(0)
     try expect(madeStep.observation as? Int == 0, "registry make DummyEnv step")
     try made.close()
+    // CartPole uses MLXArray observations — exercised in XCTest (Metal), not CLI smoke.
     do {
         _ = try reg.make("no-such-env")
         throw SmokeFailure.message("expected unknownID")

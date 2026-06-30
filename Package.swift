@@ -50,7 +50,7 @@ let package = Package(
         ),
         .target(
             name: "RLXEnvs",
-            dependencies: ["RLXCore"],
+            dependencies: ["RLXCore", "RLXWrappers"],
             path: "Sources/RLXEnvs"
         ),
         .target(
@@ -73,7 +73,7 @@ let package = Package(
         ),
         .testTarget(
             name: "RLXEnvsTests",
-            dependencies: ["RLXEnvs", "RLXCore"],
+            dependencies: ["RLXEnvs", "RLXCore", "RLXWrappers"],
             path: "Tests/RLXEnvsTests"
         ),
         .testTarget(
