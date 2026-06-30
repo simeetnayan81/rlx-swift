@@ -30,6 +30,10 @@ let package = Package(
             name: "RLXTesting",
             targets: ["RLXTesting"]
         ),
+        .library(
+            name: "RLXVector",
+            targets: ["RLXVector"]
+        ),
     ],
     dependencies: [
         // Pin mlx-swift; platforms/tools-version inherit from this pin (design.md §27.2).
@@ -58,6 +62,15 @@ let package = Package(
             dependencies: ["RLXCore", "RLXWrappers"],
             path: "Sources/RLXTesting"
         ),
+        .target(
+            name: "RLXVector",
+            dependencies: [
+                "RLXCore",
+                "RLXWrappers",
+                .product(name: "MLX", package: "mlx-swift"),
+            ],
+            path: "Sources/RLXVector"
+        ),
         .testTarget(
             name: "RLXCoreTests",
             dependencies: [
@@ -81,11 +94,16 @@ let package = Package(
             dependencies: ["RLXTesting", "RLXEnvs", "RLXWrappers"],
             path: "Tests/RLXTestingTests"
         ),
+        .testTarget(
+            name: "RLXVectorTests",
+            dependencies: ["RLXVector", "RLXEnvs", "RLXCore", "RLXWrappers"],
+            path: "Tests/RLXVectorTests"
+        ),
         // CLI / Linux smoke executable (no XCTest). Links core, envs, wrappers, and testing
         // helpers on Discrete / pure-Swift paths; MLXArray-heavy checks stay in XCTest.
         .executableTarget(
             name: "RLXCoreSmoke",
-            dependencies: ["RLXCore", "RLXEnvs", "RLXWrappers", "RLXTesting"],
+            dependencies: ["RLXCore", "RLXEnvs", "RLXWrappers", "RLXTesting", "RLXVector"],
             path: "Sources/RLXCoreSmoke"
         ),
     ]

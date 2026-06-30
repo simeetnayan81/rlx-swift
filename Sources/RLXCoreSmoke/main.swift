@@ -9,6 +9,7 @@ import RLXCore
 import RLXEnvs
 import RLXWrappers
 import RLXTesting
+import RLXVector
 
 enum SmokeFailure: Error, CustomStringConvertible {
     case message(String)
@@ -345,6 +346,17 @@ do {
             throw SmokeFailure.message("expected unknownID, got \(err)")
         }
     }
+
+
+    // SyncVectorEnv (DummyEnv / Int — no MLXArray)
+    let vec = SyncVectorEnv(numEnvs: 2, autoresetMode: .sameStep) {
+        AnyEnvironment(DummyEnv(episodeLength: 1))
+    }
+    _ = try vec.reset(seed: 1)
+    let vs = try vec.step([1, 1])
+    try expect(vs.terminateds[0] && vs.terminateds[1], "vector sameStep terminations")
+    try expect(vs.observations[0] as? Int == 0, "vector live obs after sameStep reset")
+    try vec.close()
 
     print("RLXCoreSmoke: all checks passed (rlx-swift \(RLXCore.version))")
     exit(0)
