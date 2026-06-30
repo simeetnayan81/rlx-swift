@@ -4,12 +4,14 @@
 # Runs:
 #   1) Lightweight lint (SwiftLint if installed; otherwise basic file checks)
 #   2) swift build
-#   3) Unit tests via xcodebuild on macOS (skipped on Linux — no Metal/XCTest gate here)
+#   3) RLXCoreSmoke (local CLI smoke — not Linux Docker; CI covers Linux)
+#   4) Unit tests via xcodebuild on macOS (skipped on Linux — no Metal/XCTest gate here)
 #
-# Does NOT run RLXCoreSmoke or Linux Docker / iOS (use ./scripts/verify-all.sh for full matrix).
+# Does NOT run Linux Docker smoke or iOS Simulator (GitHub Actions / verify-all).
 #
-# Skip once:  SKIP_PRECOMMIT=1 git commit ...
-# Skip tests: PRECOMMIT_SKIP_TESTS=1 git commit ...
+# Skip once:   SKIP_PRECOMMIT=1 git commit ...
+# Skip tests:  PRECOMMIT_SKIP_TESTS=1 git commit ...   # also skips smoke
+# Skip smoke:  PRECOMMIT_SKIP_SMOKE=1 git commit ...
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -101,12 +103,20 @@ echo "pre-commit: swift build"
 swift build
 
 if [[ "${PRECOMMIT_SKIP_TESTS:-}" == "1" ]]; then
-  echo "pre-commit: unit tests skipped (PRECOMMIT_SKIP_TESTS=1)"
+  echo "pre-commit: smoke + unit tests skipped (PRECOMMIT_SKIP_TESTS=1)"
   echo "pre-commit: ok"
   exit 0
 fi
 
-# Unit tests (macOS + Xcode). Not smoke.
+# Local CLI smoke (same binary Linux CI runs, but on the host — no Docker).
+if [[ "${PRECOMMIT_SKIP_SMOKE:-}" == "1" ]]; then
+  echo "pre-commit: RLXCoreSmoke skipped (PRECOMMIT_SKIP_SMOKE=1)"
+else
+  echo "pre-commit: RLXCoreSmoke"
+  swift run RLXCoreSmoke
+fi
+
+# Unit tests (macOS + Xcode). Linux Docker / iOS left to GitHub Actions.
 if [[ "$(uname -s)" == "Darwin" ]]; then
   if [[ -z "${DEVELOPER_DIR:-}" && -d /Applications/Xcode.app/Contents/Developer ]]; then
     export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
@@ -123,7 +133,7 @@ if [[ "$(uname -s)" == "Darwin" ]]; then
   echo "pre-commit: unit tests (xcodebuild, macOS)"
   ./scripts/xcodebuild-test.sh
 else
-  echo "pre-commit: non-macOS — skipping xcodebuild unit tests (run CI / verify-all for full gates)"
+  echo "pre-commit: non-macOS — skipping xcodebuild unit tests (CI runs Linux smoke + build)"
 fi
 
 echo "pre-commit: ok"
