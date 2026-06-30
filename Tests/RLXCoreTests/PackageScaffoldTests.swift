@@ -16,7 +16,7 @@ final class PackageScaffoldTests: XCTestCase {
 
     func testRLXCoreExportsVersionString() {
         XCTAssertFalse(RLXCore.version.isEmpty)
-        XCTAssertTrue(RLXCore.version.contains("0.1.0"))
+        XCTAssertTrue(RLXCore.version.contains("0.2.0"))
     }
 
     func testRLXCoreCanConstructAndEvalMLXArray() {

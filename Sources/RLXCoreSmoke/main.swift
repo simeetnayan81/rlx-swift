@@ -27,7 +27,7 @@ func expect(_ condition: @autoclosure () -> Bool, _ message: String) throws {
 do {
     // Identity
     try expect(!RLXCore.version.isEmpty, "RLXCore.version must be non-empty")
-    try expect(RLXCore.version.contains("0.1.0"), "RLXCore.version should contain 0.1.0, got \(RLXCore.version)")
+    try expect(RLXCore.version.contains("0.2.0"), "RLXCore.version should contain 0.2.0, got \(RLXCore.version)")
     let _: () -> Any = { RLXCore.mlxSmokeArray() as Any }
 
     // Info: empty, subscript, remove, set, merge, nested, equality
