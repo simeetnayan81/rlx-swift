@@ -324,6 +324,24 @@ do {
     try transformed.close()
     // ClipAction / RescaleAction require MLXArray evaluation — XCTest on macOS only.
 
+    // EnvironmentRegistry (local instance — do not mutate shared in smoke)
+    let reg = EnvironmentRegistry()
+    try RLXEnvsRegistration.registerDefaults(on: reg)
+    try expect(reg.ids.contains("DummyEnv-v0"), "registry lists DummyEnv-v0")
+    let made = try reg.make("DummyEnv-v0")
+    _ = try made.reset()
+    let madeStep = try made.step(0)
+    try expect(madeStep.observation as? Int == 0, "registry make DummyEnv step")
+    try made.close()
+    do {
+        _ = try reg.make("no-such-env")
+        throw SmokeFailure.message("expected unknownID")
+    } catch let err as RegistryError {
+        guard case .unknownID = err else {
+            throw SmokeFailure.message("expected unknownID, got \(err)")
+        }
+    }
+
     print("RLXCoreSmoke: all checks passed (rlx-swift \(RLXCore.version))")
     exit(0)
 } catch {
