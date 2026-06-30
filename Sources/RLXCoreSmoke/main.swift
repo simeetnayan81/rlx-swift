@@ -1,6 +1,6 @@
-// Tier-2 smoke: links RLXCore (+ RLXEnvs / RLXWrappers / RLXTesting after PR-07+) and
-// exercises types without relying on Metal metallib / MLXArray eval where possible.
-// Tier-1 XCTest (MLX key equality, Box clip/rescale tensors) runs via xcodebuild on macOS.
+// CLI / Linux smoke executable: links RLXCore, RLXEnvs, RLXWrappers, RLXTesting and
+// exercises stable APIs on paths that do not require Metal metallib / MLXArray eval.
+// Full XCTest (including MLX-backed sampling and Box clip/rescale) runs via xcodebuild.
 
 import Foundation
 import RLXCore
@@ -175,7 +175,7 @@ do {
     let decoded = try JSONDecoder().decode(RenderMode.self, from: encoded)
     try expect(decoded == .human, "RenderMode Codable")
 
-    // PR-03: Seed + SplitMix64 (pure Swift; no MLX eval)
+    // Seed + SplitMix64 (pure Swift; no MLX eval)
     let seed = Seed(42)
     try expect(seed.rawValue == 42 && seed.uint64 == 42, "Seed rawValue")
     try expect(Seed(rawValue: 42) == seed, "Seed equality")
@@ -191,9 +191,9 @@ do {
     try expect(sm0.next() == sm1.next(), "SplitMix64 reproducibility")
     var smGold = SplitMix64(seed: 0xDEAD_BEEF)
     try expect(smGold.next() == 0x4adfb90f68c9eb9b, "SplitMix64 golden first")
-    // MLX-backed PRNG.key / split need Metal metallib — covered by tier-1 XCTest only.
+    // MLX-backed PRNG.key / split need Metal metallib — covered by XCTest on macOS.
 
-    // PR-04: DiscreteSpace Swift RNG path (no MLX key / eval)
+    // DiscreteSpace Swift RNG path (no MLX key / eval)
     let discrete = DiscreteSpace(n: 4, start: 1)
     try expect(discrete.contains(1) && discrete.contains(4), "discrete contains ends")
     try expect(!discrete.contains(0) && !discrete.contains(5), "discrete rejects OOB")
@@ -202,7 +202,7 @@ do {
     try expect(discrete.contains(act), "discrete sample in range")
     try expect(discrete.shape == nil && discrete.dtype == nil, "discrete non-tensor metadata")
 
-    // PR-05: MultiDiscrete + Dict (Swift RNG / RNGBox only)
+    // MultiDiscrete + Dict (Swift RNG / RNGBox only)
     let multi = MultiDiscreteSpace(nvec: [2, 3])
     try expect(multi.contains([0, 2]), "multi contains")
     try expect(!multi.contains([0, 3]), "multi OOB")
@@ -213,14 +213,14 @@ do {
     let dbox = RNGBox(seed: 3)
     let dv = dict.sample(box: dbox)
     try expect(dict.contains(dv), "dict sample contains")
-    // SpaceFlatten / MultiBinary MLX paths need metallib — tier-1 XCTest only.
+    // SpaceFlatten / MultiBinary MLX paths need metallib — XCTest on macOS.
 
-    // PR-06: EnvSpec + Environment protocol surface via DummyEnv (PR-07) / AnyEnvironment
+    // EnvSpec
     let espec = EnvSpec(id: "Smoke-v0", maxEpisodeSteps: 10, version: 1)
     try expect(espec.id == "Smoke-v0" && espec.maxEpisodeSteps == 10, "EnvSpec fields")
     try expect(espec.nondeterministic == false, "EnvSpec default deterministic")
 
-    // PR-07: DummyEnv lifecycle (Int / Discrete — no MLX eval)
+    // DummyEnv lifecycle (Int / Discrete — no MLX eval)
     let dummy = DummyEnv(observationN: 5, actionN: 5, episodeLength: 3)
     try expect(dummy.spec?.id == "DummyEnv-v0", "DummyEnv id")
     do {
@@ -259,7 +259,7 @@ do {
     try expect(anyStep.reward == 2, "AnyEnvironment reward")
     try anyEnv.close()
 
-    // OrderEnforcing (PR-07)
+    // OrderEnforcing
     let ordered = OrderEnforcing(DummyEnv(episodeLength: 2))
     do {
         _ = try ordered.step(0)
@@ -279,13 +279,13 @@ do {
     }
     try ordered.close()
 
-    // checkEnvironment (PR-07) — Discrete sampling only
+    // checkEnvironment — Discrete sampling only
     try checkEnvironment(
         { DummyEnv(episodeLength: 4) },
         options: CheckEnvironmentOptions(episodes: 2, seed: 11, enforceOrder: true)
     )
 
-    // PR-08: InfoKeys, TimeLimit, RecordEpisodeStatistics
+    // InfoKeys, TimeLimit, RecordEpisodeStatistics
     try expect(InfoKeys.timeLimitTruncated == "TimeLimit.truncated", "InfoKeys TimeLimit")
     try expect(InfoKeys.episode == "episode", "InfoKeys episode")
     try expect(InfoKeys.episodeReturn == "r" && InfoKeys.episodeLength == "l", "InfoKeys r/l")
@@ -307,7 +307,7 @@ do {
     try expect(epStats[InfoKeys.episodeReturn] == .double(3), "episode return 3")
     try limited.close()
 
-    // PR-09: TransformObservation / TransformReward (pure Int / Float — no MLX)
+    // TransformObservation / TransformReward (pure Int / Float — no MLX)
     let transformed = TransformReward(
         TransformObservation(
             DummyEnv(observationN: 5, actionN: 5, episodeLength: 3),
@@ -320,12 +320,9 @@ do {
     try expect(ts.observation == 4, "transform obs doubled")
     try expect(ts.reward == 20, "transform reward *10")
     try transformed.close()
-    // ClipAction / RescaleAction use MLXArray ops — tier-1 XCTest only (Metal/CPU eval).
+    // ClipAction / RescaleAction use MLXArray ops — covered by XCTest on macOS.
 
-    print(
-        "RLXCoreSmoke: all checks passed (rlx-swift \(RLXCore.version), "
-            + "RLXCore+RLXEnvs+RLXWrappers+RLXTesting; PR-02..PR-09 OK)"
-    )
+    print("RLXCoreSmoke: all checks passed (rlx-swift \(RLXCore.version))")
     exit(0)
 } catch {
     let message = "RLXCoreSmoke FAILED: \(error)\n"

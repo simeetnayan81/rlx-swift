@@ -81,9 +81,8 @@ let package = Package(
             dependencies: ["RLXTesting", "RLXEnvs", "RLXWrappers"],
             path: "Tests/RLXTestingTests"
         ),
-        // Local/CI-independent smoke executable (no XCTest / Metal runtime required).
-        // Links post–PR-06 modules so tier-2 Linux CI exercises DummyEnv + wrappers + checkEnvironment
-        // on pure Swift / Discrete paths (MLXArray-heavy paths stay tier-1 XCTest).
+        // CLI / Linux smoke executable (no XCTest). Links core, envs, wrappers, and testing
+        // helpers on Discrete / pure-Swift paths; MLXArray-heavy checks stay in XCTest.
         .executableTarget(
             name: "RLXCoreSmoke",
             dependencies: ["RLXCore", "RLXEnvs", "RLXWrappers", "RLXTesting"],
