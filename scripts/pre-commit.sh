@@ -137,3 +137,5 @@ else
 fi
 
 echo "pre-commit: ok"
+
+# Hook verification: full path exercised on commit.
