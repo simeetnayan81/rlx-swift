@@ -244,7 +244,8 @@ Documentation is intentionally layered so **contracts stay normative** while **D
 | Layer | Location | Use when |
 |-------|----------|----------|
 | **Normative design** | [`design.md`](design.md) | Locked semantics, roadmap (§28), decisions (§26–§27) |
-| **Doc map** | [`Documentation/README.md`](Documentation/README.md) | How layers fit together |
+| **Developer guide** | [`Documentation/DeveloperGuide.md`](Documentation/DeveloperGuide.md) | Modules, patterns, errors, PR checklist |
+| **Doc map / DocC workflow** | [`Documentation/README.md`](Documentation/README.md) | View archives, author new API docs |
 | **DocC (API + articles)** | `Sources/<Target>/<Target>.docc/` | Xcode / `swift-docc-plugin` |
 | **Custom env guide** | DocC article *Implement a custom environment* (`RLXWrappers`) | First contribution |
 | **Runnable example** | `Examples/RandomAgentDemo` | See `reset` / `step` without algorithms |

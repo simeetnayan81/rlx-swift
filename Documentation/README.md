@@ -3,8 +3,15 @@
 How documentation is organized, **how to view** compiled DocC output, and **how to document
 new APIs** going forward.
 
-The **normative** contract text remains [`design.md`](../design.md) at the repository root.
-DocC and this guide **teach and navigate** the API; they do not replace locked design decisions.
+| I want to… | Read |
+|------------|------|
+| **Extend or integrate the library** | **[DeveloperGuide.md](DeveloperGuide.md)** (start here for day-to-day development) |
+| **Locked API contracts** | [`design.md`](../design.md) |
+| **Browse APIs in Xcode** | Sections below (*How to view compiled documentation*) |
+| **Add docs for a new public API** | *How to document new APIs / code* below |
+
+The **normative** contract text remains [`design.md`](../design.md). DocC and these guides
+**teach and navigate** the API; they do not replace locked design decisions.
 Update `design.md` in the same PR as intentional contract changes.
 
 ---
@@ -14,7 +21,8 @@ Update `design.md` in the same PR as intentional contract changes.
 | Resource | Purpose | Committed? |
 |----------|---------|------------|
 | [`design.md`](../design.md) | Locked API contracts, roadmap, decisions | Yes |
-| `Sources/<Target>/<Target>.docc/` | DocC catalogs (module landing + articles) | Yes |
+| **[DeveloperGuide.md](DeveloperGuide.md)** | Module map, patterns, errors, PR checklist | Yes |
+| `Sources/<Target>/<Target>.docc/` | DocC catalogs (API + articles) | Yes |
 | `///` comments on public Swift APIs | Symbol pages in DocC | Yes |
 | [`README.md`](../README.md) | Install, CI, package layout | Yes |
 | `Examples/RandomAgentDemo` | Runnable random-policy demo | Yes |

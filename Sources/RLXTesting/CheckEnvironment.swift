@@ -38,10 +38,21 @@ public enum CheckEnvironmentError: Error, Equatable, Sendable {
     case underlying(String)
 }
 
-/// Exercises env contracts (§20.3): spaces, reset/step, optional order, determinism, close.
+/// Multi-episode **contract harness** for a concrete ``Environment`` (`design.md` §20.3).
+///
+/// Use in unit tests and CI. This is **not** a live wrapper — for per-step checks during
+/// development, wrap with ``PassiveEnvChecker`` / ``OrderEnforcing`` instead (see
+/// `Documentation/DeveloperGuide.md` and DocC *Validation layers*).
+///
+/// Exercises:
+/// 1. Space sample + `contains`
+/// 2. Reset / step produce in-space observations and finite rewards
+/// 3. Optional post-terminal order check via ``OrderEnforcing``
+/// 4. Determinism pair when the env is not marked nondeterministic
+/// 5. Close idempotency
 ///
 /// Requires `Observation: Equatable` so determinism can compare trajectories.
-/// Prefer a factory so two independent instances can be constructed for the determinism check.
+/// Prefer a **factory** so two independent instances can be constructed.
 ///
 /// - Parameters:
 ///   - makeEnv: Fresh env factory (called multiple times).

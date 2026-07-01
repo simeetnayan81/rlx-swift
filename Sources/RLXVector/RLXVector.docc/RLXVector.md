@@ -40,4 +40,5 @@ Single-env ``Environment`` APIs remain **synchronous**; parallelism lives here (
 
 ## See also
 
+- Repository `Documentation/DeveloperGuide.md` (vector collection pattern)
 - `design.md` §16 (vectorized & parallel), §13.4 (vector seeding)

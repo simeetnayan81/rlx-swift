@@ -1,13 +1,20 @@
 // RLXCore — reinforcement learning environment & data-collection substrate on mlx-swift.
 //
-// Hosts result types, errors, Seed/PRNG helpers, and (incrementally)
-// Environment/Space protocols and registry. See design.md §28 PR plan.
+// Core contracts: Environment, Space, results, Seed/PRNG, registry, errors, type erasure.
+// Normative design: repository design.md. Developer map: Documentation/DeveloperGuide.md.
 
 import MLX
 
-/// Package identity marker for tests and diagnostics.
+/// Module identity and lightweight diagnostics for the **RLXCore** product.
+///
+/// `RLXCore` is the foundation target of `rlx-swift`: MDP protocols, spaces, seeding,
+/// registry, and type erasure. It depends on **MLX** only. Higher layers (`RLXWrappers`,
+/// `RLXEnvs`, `RLXVector`, `RLXTesting`) build on this module.
+///
+/// - See also: DocC *Architecture for developers*; repository `Documentation/DeveloperGuide.md`.
 public enum RLXCore {
-    /// Development version of the package on this branch/line (`-dev` = unreleased).
+    /// Package version string for this source line (`-dev` means unreleased).
+    ///
     /// Release tags set this to a bare SemVer (e.g. `"0.1.0"`) on the `release` branch only.
     public static let version = "0.2.0-dev"
 

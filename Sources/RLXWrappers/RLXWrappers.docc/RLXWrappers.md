@@ -67,6 +67,7 @@ ultra-hot collection loops.
 
 ## See also
 
+- Repository `Documentation/DeveloperGuide.md`
 - `design.md` §15 (wrappers), §20 (validation)
-- `RLXCore` lifecycle articles
+- `RLXCore` DocC *Architecture for developers* and lifecycle articles
 - Example: `swift run RandomAgentDemo`
