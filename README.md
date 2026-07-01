@@ -6,7 +6,7 @@ Reinforcement learning infrastructure for Swift, built on [mlx-swift](https://gi
 
 It is **not** an algorithms package. Policies, losses, and optimizers live in separate targets/packages (`MLXNN`, `MLXOptimizers`, future `rlx-swift-algorithms`).
 
-> **Status:** **0.1.0** — environment substrate on mlx-swift (`RLXCore`, `RLXWrappers`, `RLXEnvs` with DummyEnv / CartPole-v1 / Pendulum-v1, `RLXTesting`). Not an algorithms package. See [design.md](design.md).
+> **Status:** **0.2.0-dev** — environment substrate on mlx-swift: core, wrappers (incl. `PassiveEnvChecker`), envs, testing, sync/async vector envs, DocC catalogs, `RandomAgentDemo`. Not an algorithms package. See [design.md](design.md) and [Documentation/README.md](Documentation/README.md).
 
 ## Requirements
 
@@ -26,14 +26,15 @@ It is **not** an algorithms package. Policies, losses, and optimizers live in se
 dependencies: [
     .package(url: "https://github.com/simeetnayan81/rlx-swift", from: "0.1.0"),
 ],
-// Products: RLXCore, RLXWrappers, RLXEnvs, RLXTesting
+// Products: RLXCore, RLXWrappers, RLXEnvs, RLXTesting, RLXVector
 // e.g. .product(name: "RLXCore", package: "rlx-swift")
 ```
 
 ### macOS
 
 ```bash
-swift build && swift run RLXCoreSmoke          # CLI smoke (core + envs + wrappers + checkEnvironment)
+swift build && swift run RLXCoreSmoke          # CLI smoke (core + envs + wrappers + vector + checkEnvironment)
+swift run RandomAgentDemo                     # minimal random-policy loop (DummyEnv + dev wrapper stack)
 xcodebuild test -scheme rlx-swift-Package -destination 'platform=macOS'   # full tests (Metal)
 # or: ./scripts/xcodebuild-test.sh
 ```
@@ -224,15 +225,68 @@ For full tests on a Mac:
 
 ## Package layout
 
-| Target | Role | Status |
-|--------|------|--------|
-| `RLXCore` | Protocols, spaces, results, seed, errors, registry | Spaces composite+flatten (PR-05); Discrete/Box (PR-04); Seed/PRNG (PR-03); results (PR-02) |
-| `RLXWrappers` | TimeLimit, transforms, order enforcement | Planned |
-| `RLXVector` | Sync / async vector envs | Planned |
-| `RLXEnvs` | Reference envs (CartPole, Pendulum, …) | Planned |
-| `RLXTesting` | `checkEnvironment`, contract helpers | Planned |
+| Target / product | Role | Status |
+|------------------|------|--------|
+| `RLXCore` | Protocols, spaces, results, seed/PRNG, errors, registry, type erasure | Shipped (DocC catalog) |
+| `RLXWrappers` | OrderEnforcing, TimeLimit, stats, transforms, **PassiveEnvChecker** | Shipped (DocC catalog) |
+| `RLXEnvs` | DummyEnv, CartPole-v1, Pendulum-v1 + registry registration | Shipped (DocC catalog) |
+| `RLXTesting` | `checkEnvironment` contract harness | Shipped (DocC catalog) |
+| `RLXVector` | SyncVectorEnv, AsyncVectorEnv, autoreset modes | Shipped (DocC catalog) |
+| `RandomAgentDemo` | Executable: random policy on DummyEnv + recommended wrapper stack | Shipped |
+| `RLXCoreSmoke` | Linux/macOS CLI smoke (no XCTest) | Shipped |
 
 Full layout and contracts: [design.md](design.md) §6–§8.
+
+## Documentation
+
+Documentation is intentionally layered so **contracts stay normative** while **DocC teaches the API**.
+
+| Layer | Location | Use when |
+|-------|----------|----------|
+| **Normative design** | [`design.md`](design.md) | Locked semantics, roadmap (§28), decisions (§26–§27) |
+| **Doc map** | [`Documentation/README.md`](Documentation/README.md) | How layers fit together |
+| **DocC (API + articles)** | `Sources/<Target>/<Target>.docc/` | Xcode / `swift-docc-plugin` |
+| **Custom env guide** | DocC article *Implement a custom environment* (`RLXWrappers`) | First contribution |
+| **Runnable example** | `Examples/RandomAgentDemo` | See `reset` / `step` without algorithms |
+
+### Build & view DocC
+
+Prefer **Xcode**: open `Package.swift` → **Product → Build Documentation** → documentation viewer.
+
+CLI needs **full Xcode** (not Command Line Tools only). If you see `Plugin does not have access to a tool named 'docc'`, run `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer` (or `export DEVELOPER_DIR=…` for the session), then:
+
+```bash
+xcrun --find docc   # must print …/Xcode.app/…/docc
+xcrun swift package generate-documentation --target RLXCore
+open .build/plugins/Swift-DocC/outputs/RLXCore.doccarchive
+# all modules → static HTML under .build/docc-site/:
+./scripts/generate-docs.sh
+```
+
+Authoring new APIs (`///`, `.docc` articles, checklist): **[Documentation/README.md](Documentation/README.md)**.
+
+Reading order: **RLXCore** → **RLXWrappers** → **RLXEnvs** / **RLXTesting** / **RLXVector**.
+
+### Validation tiers (dev vs tests)
+
+| Tool | Module | Role |
+|------|--------|------|
+| `OrderEnforcing` | `RLXWrappers` | Illegal `reset`/`step` order |
+| `PassiveEnvChecker` | `RLXWrappers` | Obs/action in space + finite reward **on every transition** |
+| `checkEnvironment` | `RLXTesting` | Multi-episode suite for CI / unit tests |
+
+Recommended stack while implementing an env:
+
+```swift
+PassiveEnvChecker(OrderEnforcing(TimeLimit(MyEnv(), maxEpisodeSteps: 200)))
+```
+
+### Implement a custom env
+
+See the DocC article **Implement a custom environment** under `RLXWrappers` (source:
+`Sources/RLXWrappers/RLXWrappers.docc/Articles/CustomEnvironmentGuide.md`), then run
+`swift run RandomAgentDemo` as a template for a random policy loop. Cross-check contracts in
+`design.md` §8, §11–§12, §15, §20.
 
 ## Design
 
@@ -241,7 +295,11 @@ The authoritative design document is [design.md](design.md):
 - Goals, non-goals, and design principles
 - `Environment` / `Space` / `StepResult` contracts
 - mlx-swift integration rules (`RLXCore` depends on `MLX` only)
+- Wrappers, vector envs, validation layers
 - Phased PR plan (§28)
+
+Implementation details that do not change contracts belong in DocC / code comments; update
+`design.md` in the same PR as intentional contract changes.
 
 ## License
 

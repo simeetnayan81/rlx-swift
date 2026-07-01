@@ -373,6 +373,13 @@ do {
     }
 
 
+    // PassiveEnvChecker
+    let passive = PassiveEnvChecker(OrderEnforcing(DummyEnv(episodeLength: 2)))
+    _ = try passive.reset(seed: 0 as UInt64?, options: nil)
+    let ps = try passive.step(1)
+    try expect(ps.reward == 1, "passive checker forwards reward")
+    try passive.close()
+
     // SyncVectorEnv (DummyEnv / Int — no MLXArray)
     let vec = SyncVectorEnv(numEnvs: 2, autoresetMode: .sameStep) {
         AnyEnvironment(DummyEnv(episodeLength: 1))

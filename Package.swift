@@ -34,10 +34,16 @@ let package = Package(
             name: "RLXVector",
             targets: ["RLXVector"]
         ),
+        .executable(
+            name: "RandomAgentDemo",
+            targets: ["RandomAgentDemo"]
+        ),
     ],
     dependencies: [
         // Pin mlx-swift; platforms/tools-version inherit from this pin (design.md §27.2).
         .package(url: "https://github.com/ml-explore/mlx-swift", .upToNextMinor(from: "0.31.4")),
+        // DocC generation: `swift package generate-documentation --target RLXCore` (etc.)
+        .package(url: "https://github.com/swiftlang/swift-docc-plugin", from: "1.3.0"),
     ],
     targets: [
         .target(
@@ -105,6 +111,12 @@ let package = Package(
             name: "RLXCoreSmoke",
             dependencies: ["RLXCore", "RLXEnvs", "RLXWrappers", "RLXTesting", "RLXVector"],
             path: "Sources/RLXCoreSmoke"
+        ),
+        // Minimal random-policy demo (PR-15). DummyEnv path — no Metal required.
+        .executableTarget(
+            name: "RandomAgentDemo",
+            dependencies: ["RLXCore", "RLXEnvs", "RLXWrappers"],
+            path: "Examples/RandomAgentDemo"
         ),
     ]
 )
