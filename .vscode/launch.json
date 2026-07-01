@@ -19,6 +19,26 @@
             "target": "RLXCoreSmoke",
             "configuration": "release",
             "preLaunchTask": "swift: Build Release RLXCoreSmoke"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:rlx-swift}",
+            "name": "Debug RandomAgentDemo",
+            "target": "RandomAgentDemo",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug RandomAgentDemo"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:rlx-swift}",
+            "name": "Release RandomAgentDemo",
+            "target": "RandomAgentDemo",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release RandomAgentDemo"
         }
     ]
 }
