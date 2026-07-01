@@ -1,7 +1,7 @@
 // RLXCore — reinforcement learning environment & data-collection substrate on mlx-swift.
 //
 // Core contracts: Environment, Space, results, Seed/PRNG, registry, errors, type erasure.
-// Normative design: repository design.md. Developer map: Documentation/DeveloperGuide.md.
+// Normative design: repository design.md. Developer map: DocC Architecture for developers.
 
 import MLX
 
@@ -11,7 +11,7 @@ import MLX
 /// registry, and type erasure. It depends on **MLX** only. Higher layers (`RLXWrappers`,
 /// `RLXEnvs`, `RLXVector`, `RLXTesting`) build on this module.
 ///
-/// - See also: DocC *Architecture for developers*; repository `Documentation/DeveloperGuide.md`.
+/// - See also: DocC *Architecture for developers* (module map and data flow).
 public enum RLXCore {
     /// Package version string for this source line (`-dev` means unreleased).
     ///

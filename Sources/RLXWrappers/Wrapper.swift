@@ -15,8 +15,7 @@ import RLXCore
 /// same observation/action types as `Inner`. Transform wrappers (``ClipAction``,
 /// ``TransformObservation``, …) may change associated types and expose a new space.
 ///
-/// Stack **outside-in** (outermost receives calls first). See DocC *Wrapper composition*
-/// and repository `Documentation/DeveloperGuide.md`.
+/// Stack **outside-in** (outermost receives calls first). See DocC *Wrapper composition*.
 public protocol EnvironmentWrapper: Environment {
     associatedtype Inner: Environment
     /// Immediate wrapped environment (one layer down).

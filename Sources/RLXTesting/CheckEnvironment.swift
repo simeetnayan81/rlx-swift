@@ -42,7 +42,7 @@ public enum CheckEnvironmentError: Error, Equatable, Sendable {
 ///
 /// Use in unit tests and CI. This is **not** a live wrapper — for per-step checks during
 /// development, wrap with ``PassiveEnvChecker`` / ``OrderEnforcing`` instead (see
-/// `Documentation/DeveloperGuide.md` and DocC *Validation layers*).
+/// DocC *Validation layers*).
 ///
 /// Exercises:
 /// 1. Space sample + `contains`

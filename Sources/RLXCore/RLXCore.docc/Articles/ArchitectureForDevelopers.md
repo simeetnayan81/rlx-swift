@@ -61,10 +61,12 @@ terminal observations are recovered from `info` (`final_observation` / `final_in
 ## Extending the library
 
 1. Prefer new **wrappers** or **envs** over changing core protocols.
-2. Public API needs `///` documentation (DocC symbol pages).
-3. Contract changes require a `design.md` update in the same PR.
+2. Document public APIs with `///` (feeds these DocC symbol pages).
+3. Contract changes update repository `design.md` in the same PR.
 4. Register reference envs via factories that document their wrapper stack.
-5. Full contributor workflow: repository `Documentation/DeveloperGuide.md`.
+5. Runnable loop: `Examples/RandomAgentDemo` (`swift run RandomAgentDemo`).
+
+Do not duplicate long recipes here — follow the related articles for each topic.
 
 ## Related articles
 
@@ -72,3 +74,5 @@ terminal observations are recovered from `info` (`final_observation` / `final_in
 - <doc:SpacesAndSampling>
 - <doc:SeedingAndPRNG>
 - <doc:InfoAndSpecs>
+
+In **RLXWrappers** DocC: *Validation layers*, *Wrapper composition*, *Implement a custom environment*.
