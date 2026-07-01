@@ -189,7 +189,8 @@ let package = Package(
         .executableTarget(
             name: "ALEGifDemo",
             dependencies: ["RLXALE", "RLXCore"],
-            path: "Examples/ALEGifDemo"
+            path: "Examples/ALEGifDemo",
+            exclude: ["output"]
         ),
     ],
     cxxLanguageStandard: .cxx17
