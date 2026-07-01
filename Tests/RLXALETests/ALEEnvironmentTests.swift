@@ -1,3 +1,4 @@
+import MLX
 import RLXALE
 import RLXCore
 import XCTest
@@ -39,11 +40,16 @@ final class ALEEnvironmentTests: XCTestCase {
             throw XCTSkip("Set ALE_ROM_PATH to a ROM file to run live ALE tests")
         }
 
+        Device.setDefault(device: .cpu)
         let env = try ALEEnvironment(
             config: ALEConfig(romPath: rom, observationType: .grayscale, frameSkip: 4, seed: 1)
         )
         let r = try env.reset(seed: 1 as UInt64?, options: nil)
         XCTAssertEqual(r.observation.shape.count, 2)
+        XCTAssertEqual(r.observation.shape[0], env.screenHeight)
+        XCTAssertEqual(r.observation.shape[1], env.screenWidth)
+        let pixels = try env.copyGrayscaleFrame()
+        XCTAssertFalse(pixels.allSatisfy { $0 == 0 }, "expected non-blank rendered frame")
         let step = try env.step(0)
         XCTAssertTrue(step.reward.isFinite)
         XCTAssertEqual(step.observation.shape, r.observation.shape)

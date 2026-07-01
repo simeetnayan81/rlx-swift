@@ -59,6 +59,26 @@
             "target": "ALERandomAgent",
             "configuration": "release",
             "preLaunchTask": "swift: Build Release ALERandomAgent"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:rlx-swift}",
+            "name": "Debug MLXCPUCheck",
+            "target": "MLXCPUCheck",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug MLXCPUCheck"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:rlx-swift}",
+            "name": "Release MLXCPUCheck",
+            "target": "MLXCPUCheck",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release MLXCPUCheck"
         }
     ]
 }
