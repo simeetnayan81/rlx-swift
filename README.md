@@ -6,7 +6,7 @@ Reinforcement learning infrastructure for Swift, built on [mlx-swift](https://gi
 
 It is **not** an algorithms package. Policies, losses, and optimizers live in separate targets/packages (`MLXNN`, `MLXOptimizers`, future `rlx-swift-algorithms`).
 
-> **Status:** **0.2.0-dev** — environment substrate on mlx-swift: core, wrappers (incl. `PassiveEnvChecker`), envs, testing, sync/async vector envs, DocC, `RandomAgentDemo`. Not an algorithms package. See [design.md](design.md); developer/API docs live in **DocC** (Xcode **Product → Build Documentation**).
+> **Status:** **0.2.0-dev** — environment substrate on mlx-swift (`RLXCore`, wrappers, envs, testing, vector envs, DocC, `RandomAgentDemo`). Not an algorithms package. See [design.md](design.md).
 
 ## Requirements
 
@@ -239,35 +239,21 @@ Full layout and contracts: [design.md](design.md) §6–§8.
 
 ## Documentation
 
-Avoid parallel write-ups of the same material. Prefer a **single source** per kind of content:
+API and developer documentation ship as **DocC** with the package sources (`Sources/<Target>/<Target>.docc/`).
 
-| Kind | Where |
-|------|--------|
-| Locked contracts / roadmap | [`design.md`](design.md) |
-| Developer orientation (modules, data flow) | DocC **RLXCore** → *Architecture for developers* |
-| Lifecycle, spaces, seeding, info | DocC **RLXCore** articles |
-| Validation, wrappers, custom env recipe | DocC **RLXWrappers** articles |
-| Vector APIs | DocC **RLXVector** + `///` on types |
-| Runnable loop | `Examples/RandomAgentDemo` (`swift run RandomAgentDemo`) |
-| Symbol behaviour | `///` on public APIs (compiled into DocC) |
+In **Xcode**, open `Package.swift` → **Product → Build Documentation**. Start with **RLXCore** (*Architecture for developers*), then **RLXWrappers** (*Implement a custom environment*, *Validation layers*) and the other module pages as needed.
 
-**View DocC:** open `Package.swift` in Xcode → **Product → Build Documentation**.
-Start at **RLXCore** (*Architecture for developers*), then **RLXWrappers** (*Implement a custom environment*, *Validation layers*).
-
-**CLI** (needs full Xcode, not CLT-only — if you see `Plugin does not have access to a tool named 'docc'`, run `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`):
+From the **CLI** (requires full Xcode, not Command Line Tools only):
 
 ```bash
+# If docc is missing: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 xcrun --find docc
 xcrun swift package generate-documentation --target RLXCore
 open .build/plugins/Swift-DocC/outputs/RLXCore.doccarchive
-./scripts/generate-docs.sh   # optional static sites under .build/docc-site/
+./scripts/generate-docs.sh   # optional: static HTML under .build/docc-site/
 ```
 
-**Authoring:** add `///` on public APIs; add/update articles under `Sources/<Target>/<Target>.docc/` only when the topic is larger than one symbol; update `design.md` only for contract changes.
-
-## Design
-
-Authoritative contracts: [design.md](design.md). Do not fork those details into README or extra markdown guides — teach them via DocC and `///`.
+Design contracts and roadmap: [design.md](design.md). Minimal runnable loop: `swift run RandomAgentDemo`.
 
 ## License
 
