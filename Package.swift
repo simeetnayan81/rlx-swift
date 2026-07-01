@@ -2,8 +2,39 @@
 // Minimum SwiftPM tools version for this package.
 // Pinned mlx-swift 0.31.4 declares 5.12; we use 6.0 for Swift 6 language mode.
 // (mlx-swift main may require 6.3 — do not copy main's tools-version unless you bump the pin.)
+//
+// Optional ALE (Atari): set ALE_ROOT to an ALE CMake install prefix, then rebuild.
+// See docs/ale-adapter-design.md.
 
 import PackageDescription
+
+// When set to an ALE install prefix (include/ + lib/), link the real C++ library.
+let aleRoot = Context.environment["ALE_ROOT"]
+let aleEnabled = !(aleRoot ?? "").isEmpty
+
+var aleCXXSettings: [CXXSetting] = [
+    .headerSearchPath("include"),
+]
+var aleLinkerSettings: [LinkerSetting] = []
+
+if aleEnabled, let root = aleRoot {
+    aleCXXSettings.append(contentsOf: [
+        .define("RLX_ALE_ENABLED"),
+        .unsafeFlags([
+            "-I\(root)/include",
+            "-I\(root)/include/ale",
+        ]),
+    ])
+    aleLinkerSettings.append(contentsOf: [
+        .unsafeFlags([
+            "-L\(root)/lib",
+            "-L\(root)/lib64",
+            "-lale",
+            // Common ALE transitive deps (may be unused if static/shared already embeds):
+            "-lz",
+        ]),
+    ])
+}
 
 let package = Package(
     name: "rlx-swift",
@@ -34,9 +65,18 @@ let package = Package(
             name: "RLXVector",
             targets: ["RLXVector"]
         ),
+        // Optional Atari adapter (works as stub without ALE_ROOT; real ALE when ALE_ROOT is set).
+        .library(
+            name: "RLXALE",
+            targets: ["RLXALE"]
+        ),
         .executable(
             name: "RandomAgentDemo",
             targets: ["RandomAgentDemo"]
+        ),
+        .executable(
+            name: "ALERandomAgent",
+            targets: ["ALERandomAgent"]
         ),
     ],
     dependencies: [
@@ -77,6 +117,23 @@ let package = Package(
             ],
             path: "Sources/RLXVector"
         ),
+        // C++ shim over ALE (stub if ALE_ROOT unset).
+        .target(
+            name: "RLXALECXX",
+            path: "Sources/RLXALECXX",
+            publicHeadersPath: "include",
+            cxxSettings: aleCXXSettings,
+            linkerSettings: aleLinkerSettings
+        ),
+        .target(
+            name: "RLXALE",
+            dependencies: [
+                "RLXCore",
+                "RLXALECXX",
+                .product(name: "MLX", package: "mlx-swift"),
+            ],
+            path: "Sources/RLXALE"
+        ),
         .testTarget(
             name: "RLXCoreTests",
             dependencies: [
@@ -105,18 +162,26 @@ let package = Package(
             dependencies: ["RLXVector", "RLXEnvs", "RLXCore", "RLXWrappers"],
             path: "Tests/RLXVectorTests"
         ),
-        // CLI / Linux smoke executable (no XCTest). Links core, envs, wrappers, and testing
-        // helpers on Discrete / pure-Swift paths; MLXArray-heavy checks stay in XCTest.
+        .testTarget(
+            name: "RLXALETests",
+            dependencies: ["RLXALE", "RLXCore"],
+            path: "Tests/RLXALETests"
+        ),
         .executableTarget(
             name: "RLXCoreSmoke",
             dependencies: ["RLXCore", "RLXEnvs", "RLXWrappers", "RLXTesting", "RLXVector"],
             path: "Sources/RLXCoreSmoke"
         ),
-        // Minimal random-policy demo (PR-15). DummyEnv path — no Metal required.
         .executableTarget(
             name: "RandomAgentDemo",
             dependencies: ["RLXCore", "RLXEnvs", "RLXWrappers"],
             path: "Examples/RandomAgentDemo"
         ),
-    ]
+        .executableTarget(
+            name: "ALERandomAgent",
+            dependencies: ["RLXALE", "RLXCore", "RLXWrappers"],
+            path: "Examples/ALERandomAgent"
+        ),
+    ],
+    cxxLanguageStandard: .cxx17
 )

@@ -233,6 +233,8 @@ For full tests on a Mac:
 | `RLXTesting` | `checkEnvironment` contract harness | Shipped (DocC catalog) |
 | `RLXVector` | SyncVectorEnv, AsyncVectorEnv, autoreset modes | Shipped (DocC catalog) |
 | `RandomAgentDemo` | Executable: random policy on DummyEnv + recommended wrapper stack | Shipped |
+| `RLXALE` | Optional Atari adapter (ALE C++); stub without `ALE_ROOT` | Experimental — see [`docs/ale-adapter-design.md`](docs/ale-adapter-design.md) |
+| `ALERandomAgent` | Random policy on ALE when `ALE_ROOT` + `ALE_ROM_PATH` set | Experimental |
 | `RLXCoreSmoke` | Linux/macOS CLI smoke (no XCTest) | Shipped |
 
 Full layout and contracts: [design.md](design.md) §6–§8.

@@ -2,8 +2,8 @@
 
 | Field | Value |
 |-------|--------|
-| Status | **Draft** — design and implementation plan only; no production code yet |
-| Branch | `docs/ale-adapter-design` |
+| Status | **Implemented (phases 0–3 skeleton)** — optional `RLXALE` product + C++ shim; live ROM path gated on `ALE_ROOT` / `ALE_ROM_PATH` |
+| Branch | `feat/ale-adapter` |
 | Related | Repository [`design.md`](../design.md) §2 (out of scope), §24.3 (Atari = future adapter), §27.3 (GPL/copyleft adapters out of core) |
 | Primary dependency (planned) | [Farama Arcade Learning Environment](https://github.com/Farama-Foundation/Arcade-Learning-Environment) (ALE) **C++** library |
 
@@ -391,13 +391,13 @@ Do **not** start coding until this design is reviewed and open questions (§12) 
 
 | # | Question | Options | Proposal |
 |---|----------|---------|----------|
-| Q1 | Monorepo `RLXALE` vs separate repo | Monorepo first / separate only | **Monorepo optional product** |
-| Q2 | Default observation | Gray full-res / gray 84×84 / RGB | **Gray + preprocess wrappers for 84×84** |
-| Q3 | Default lives policy | gameOverOnly / lifeLossTerminated | **Decide in Phase 0 against one benchmark preset; document** |
-| Q4 | How SPM finds ALE | `ALE_ROOT`, brew, vendored submodule | **Spike: `ALE_ROOT` + script; no submodule unless needed** |
-| Q5 | First game | Pong / Breakout / Freeway | **Pong** (simple, common) |
-| Q6 | `UInt8` vs `Float` obs in BoxSpace | Depends on core Box support | **Audit core `BoxSpace` in Phase 1; prefer uint8 if supported** |
-| Q7 | Frameskip location | ALE internal vs Swift loop | **ALE frameskip config in `ALEConfig` for v1** |
+| Q1 | Monorepo `RLXALE` vs separate repo | Monorepo first / separate only | **Locked: monorepo optional product** |
+| Q2 | Default observation | Gray full-res / gray 84×84 / RGB | **Locked: grayscale native resolution; float32 0…255; resize later as wrappers** |
+| Q3 | Default lives policy | gameOverOnly / lifeLossTerminated | **Locked: default `gameOverOnly`; optional `lifeLossAsTerminated`** |
+| Q4 | How SPM finds ALE | `ALE_ROOT`, brew, vendored submodule | **Locked: `ALE_ROOT` + `scripts/build-ale.sh` (stub if unset)** |
+| Q5 | First game | Pong / Breakout / Freeway | **Any user ROM; example uses `ALE_ROM_PATH` (Pong recommended)** |
+| Q6 | `UInt8` vs `Float` obs in BoxSpace | Depends on core Box support | **Locked: float32 0…255 (Box contains path)** |
+| Q7 | Frameskip location | ALE internal vs Swift loop | **Locked: `ALEConfig.frameSkip` → ALE `frame_skip` before loadROM** |
 
 ---
 
@@ -443,6 +443,7 @@ Proving **CartPole + algorithm** can still proceed in parallel; ALE is the **ima
 | Version | Date | Notes |
 |---------|------|--------|
 | 0.1 | 2026-07-01 | Initial draft: package boundary, mapping, phases 0–5, open questions |
+| 0.2 | 2026-07-01 | Implementation: `RLXALECXX` shim, `RLXALE`/`ALEEnvironment`, stub+`ALE_ROOT`, tests, `ALERandomAgent`, `build-ale.sh` |
 
 **Next step after approval:** resolve §12 open questions (at least Q1, Q2, Q5, Q4), then execute **Phase 0 spike** on a follow-up branch (e.g. `feat/ale-spike`).
 

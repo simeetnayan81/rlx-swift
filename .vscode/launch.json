@@ -39,6 +39,26 @@
             "target": "RandomAgentDemo",
             "configuration": "release",
             "preLaunchTask": "swift: Build Release RandomAgentDemo"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:rlx-swift}",
+            "name": "Debug ALERandomAgent",
+            "target": "ALERandomAgent",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug ALERandomAgent"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:rlx-swift}",
+            "name": "Release ALERandomAgent",
+            "target": "ALERandomAgent",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release ALERandomAgent"
         }
     ]
 }
