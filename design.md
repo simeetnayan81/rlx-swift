@@ -1,9 +1,9 @@
 # rlx-swift — Design Document
 
-**Status:** Draft v1.2 (source of truth for implementation)  
-**Changelog v1.2:** Identity is MLX-native RL infrastructure; dropped external-framework framing. v1.1 locked toolchain/package decisions (§27).  
-**Project:** `rlx-swift` — reinforcement learning infrastructure built on [mlx-swift](https://github.com/ml-explore/mlx-swift) (`MLXArray`, Metal/CPU backends, SwiftPM)  
-**Audience:** Implementers, reviewers, algorithm authors (PPO / DQN / A2C / etc.)  
+**Status:** Draft v1.2 (source of truth for implementation)
+**Changelog v1.2:** Identity is MLX-native RL infrastructure; dropped external-framework framing. v1.1 locked toolchain/package decisions (§27).
+**Project:** `rlx-swift` — reinforcement learning infrastructure built on [mlx-swift](https://github.com/ml-explore/mlx-swift) (`MLXArray`, Metal/CPU backends, SwiftPM)
+**Audience:** Implementers, reviewers, algorithm authors (PPO / DQN / A2C / etc.)
 **Scope:** Architecture, API contracts, lifecycle semantics, module boundaries. **No implementation in this phase.**
 
 ---
@@ -839,7 +839,7 @@ try EnvironmentRegistry.shared.make(
 )
 ```
 
-Unknown id → `RegistryError.unknownID`.  
+Unknown id → `RegistryError.unknownID`.
 Invalid config type → `RegistryError.invalidConfig`.
 
 ### 18.3 Discoverability
@@ -1048,6 +1048,8 @@ Dynamics should match publicly documented control-theory / benchmark equations f
 ### 24.3 Out of scope for bootstrap
 
 Atari, MuJoCo, DM Control, Unity — future adapter packages.
+
+**Atari / ALE (adapter design):** optional product planned outside core link line (`RLXALE` + C++ shim over Farama ALE). Normative adapter design and phased plan: [`docs/ale-adapter-design.md`](docs/ale-adapter-design.md). Does not alter P0–P8 core roadmap.
 
 ---
 
