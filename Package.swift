@@ -78,6 +78,10 @@ let package = Package(
             name: "ALERandomAgent",
             targets: ["ALERandomAgent"]
         ),
+        .executable(
+            name: "ALEGifDemo",
+            targets: ["ALEGifDemo"]
+        ),
     ],
     dependencies: [
         // Pin mlx-swift; platforms/tools-version inherit from this pin (design.md §27.2).
@@ -181,6 +185,11 @@ let package = Package(
             name: "ALERandomAgent",
             dependencies: ["RLXALE", "RLXCore", "RLXWrappers"],
             path: "Examples/ALERandomAgent"
+        ),
+        .executableTarget(
+            name: "ALEGifDemo",
+            dependencies: ["RLXALE", "RLXCore"],
+            path: "Examples/ALEGifDemo"
         ),
     ],
     cxxLanguageStandard: .cxx17
