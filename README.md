@@ -6,7 +6,7 @@ Reinforcement learning infrastructure for Swift, built on [mlx-swift](https://gi
 
 It is **not** an algorithms package. Policies, losses, and optimizers live in separate targets/packages (`MLXNN`, `MLXOptimizers`, future `rlx-swift-algorithms`).
 
-> **Status:** **0.2.0-dev** — environment substrate on mlx-swift: core, wrappers (incl. `PassiveEnvChecker`), envs, testing, sync/async vector envs, DocC catalogs, `RandomAgentDemo`. Not an algorithms package. See [design.md](design.md) and [Documentation/README.md](Documentation/README.md).
+> **Status:** **0.2.0-dev** — environment substrate on mlx-swift (`RLXCore`, wrappers, envs, testing, vector envs, DocC, `RandomAgentDemo`). Not an algorithms package. See [design.md](design.md).
 
 ## Requirements
 
@@ -239,67 +239,21 @@ Full layout and contracts: [design.md](design.md) §6–§8.
 
 ## Documentation
 
-Documentation is intentionally layered so **contracts stay normative** while **DocC teaches the API**.
+API and developer documentation ship as **DocC** with the package sources (`Sources/<Target>/<Target>.docc/`).
 
-| Layer | Location | Use when |
-|-------|----------|----------|
-| **Normative design** | [`design.md`](design.md) | Locked semantics, roadmap (§28), decisions (§26–§27) |
-| **Doc map** | [`Documentation/README.md`](Documentation/README.md) | How layers fit together |
-| **DocC (API + articles)** | `Sources/<Target>/<Target>.docc/` | Xcode / `swift-docc-plugin` |
-| **Custom env guide** | DocC article *Implement a custom environment* (`RLXWrappers`) | First contribution |
-| **Runnable example** | `Examples/RandomAgentDemo` | See `reset` / `step` without algorithms |
+In **Xcode**, open `Package.swift` → **Product → Build Documentation**. Start with **RLXCore** (*Architecture for developers*), then **RLXWrappers** (*Implement a custom environment*, *Validation layers*) and the other module pages as needed.
 
-### Build & view DocC
-
-Prefer **Xcode**: open `Package.swift` → **Product → Build Documentation** → documentation viewer.
-
-CLI needs **full Xcode** (not Command Line Tools only). If you see `Plugin does not have access to a tool named 'docc'`, run `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer` (or `export DEVELOPER_DIR=…` for the session), then:
+From the **CLI** (requires full Xcode, not Command Line Tools only):
 
 ```bash
-xcrun --find docc   # must print …/Xcode.app/…/docc
+# If docc is missing: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+xcrun --find docc
 xcrun swift package generate-documentation --target RLXCore
 open .build/plugins/Swift-DocC/outputs/RLXCore.doccarchive
-# all modules → static HTML under .build/docc-site/:
-./scripts/generate-docs.sh
+./scripts/generate-docs.sh   # optional: static HTML under .build/docc-site/
 ```
 
-Authoring new APIs (`///`, `.docc` articles, checklist): **[Documentation/README.md](Documentation/README.md)**.
-
-Reading order: **RLXCore** → **RLXWrappers** → **RLXEnvs** / **RLXTesting** / **RLXVector**.
-
-### Validation tiers (dev vs tests)
-
-| Tool | Module | Role |
-|------|--------|------|
-| `OrderEnforcing` | `RLXWrappers` | Illegal `reset`/`step` order |
-| `PassiveEnvChecker` | `RLXWrappers` | Obs/action in space + finite reward **on every transition** |
-| `checkEnvironment` | `RLXTesting` | Multi-episode suite for CI / unit tests |
-
-Recommended stack while implementing an env:
-
-```swift
-PassiveEnvChecker(OrderEnforcing(TimeLimit(MyEnv(), maxEpisodeSteps: 200)))
-```
-
-### Implement a custom env
-
-See the DocC article **Implement a custom environment** under `RLXWrappers` (source:
-`Sources/RLXWrappers/RLXWrappers.docc/Articles/CustomEnvironmentGuide.md`), then run
-`swift run RandomAgentDemo` as a template for a random policy loop. Cross-check contracts in
-`design.md` §8, §11–§12, §15, §20.
-
-## Design
-
-The authoritative design document is [design.md](design.md):
-
-- Goals, non-goals, and design principles
-- `Environment` / `Space` / `StepResult` contracts
-- mlx-swift integration rules (`RLXCore` depends on `MLX` only)
-- Wrappers, vector envs, validation layers
-- Phased PR plan (§28)
-
-Implementation details that do not change contracts belong in DocC / code comments; update
-`design.md` in the same PR as intentional contract changes.
+Design contracts and roadmap: [design.md](design.md). Minimal runnable loop: `swift run RandomAgentDemo`.
 
 ## License
 

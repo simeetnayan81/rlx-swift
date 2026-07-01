@@ -1,12 +1,15 @@
 // VectorEnvironmentError — failures for vector env APIs (design.md §20.1, PR-14).
 
-/// Errors thrown by vector environment APIs (`SyncVectorEnv`, ``AsyncVectorEnv``).
+/// Errors specific to **vector** environment APIs (``SyncVectorEnv``, ``AsyncVectorEnv``).
+///
+/// Single-env failures from a slot (e.g. ``EnvironmentError/invalidAction(_:)``) propagate as
+/// the underlying error and fail the whole batch (v1: no per-lane `Result`).
 public enum VectorEnvironmentError: Error, Equatable, Sendable {
-    /// Operation on a vector env that has been `close()`d.
+    /// Operation after ``AsyncVectorEnv/close()`` (or equivalent) has completed.
     case closed
-    /// Outstanding reset/step work was cancelled (e.g. by ``AsyncVectorEnv/close()``).
+    /// Outstanding reset/step work was cancelled (typically ``AsyncVectorEnv/close()`` during an in-flight batch).
     case cancelled
-    /// Batched action/observation count did not match ``numEnvs``.
+    /// `actions.count` (or similar batch length) did not equal the vector’s `numEnvs`.
     case batchSizeMismatch(expected: Int, actual: Int)
 
     public static func == (lhs: VectorEnvironmentError, rhs: VectorEnvironmentError) -> Bool {

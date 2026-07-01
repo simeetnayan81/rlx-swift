@@ -3,9 +3,25 @@
 import RLXCore
 import RLXWrappers
 
-/// Registers built-in envs. Safe to call once per registry; second call throws ``RegistryError/duplicateID``.
+/// Registers built-in reference and debug environments on an ``EnvironmentRegistry``.
+///
+/// Call ``registerDefaults(on:)`` once at process start (or in tests). A second registration
+/// of the same id throws ``RegistryError/duplicateID(_:)`` (default policy).
+///
+/// | Id | Implementation |
+/// |----|-----------------|
+/// | `DummyEnv-v0` | ``DummyEnv`` |
+/// | `CartPole-v1` | ``CartPole`` (+ default wrapper stack in factory) |
+/// | `Pendulum-v1` | ``Pendulum`` (+ default wrapper stack in factory) |
+///
+/// Example:
+///
+/// ```swift
+/// try RLXEnvsRegistration.registerDefaults()
+/// let env = try EnvironmentRegistry.shared.make("CartPole-v1")
+/// ```
 public enum RLXEnvsRegistration {
-    /// Register DummyEnv, CartPole, and Pendulum on the given registry (default: shared).
+    /// Register DummyEnv, CartPole-v1, and Pendulum-v1 on the given registry (default: ``EnvironmentRegistry/shared``).
     public static func registerDefaults(
         on registry: EnvironmentRegistry = .shared
     ) throws {

@@ -40,4 +40,5 @@ Single-env ``Environment`` APIs remain **synchronous**; parallelism lives here (
 
 ## See also
 
-- `design.md` §16 (vectorized & parallel), §13.4 (vector seeding)
+- `RLXCore` DocC *Architecture for developers* (vector data flow)
+- Repository `design.md` §16, §13.4

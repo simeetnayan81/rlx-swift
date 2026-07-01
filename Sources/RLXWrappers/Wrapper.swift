@@ -2,14 +2,20 @@
 
 import RLXCore
 
-/// Marker / structural protocol for environments that wrap an ``inner`` env.
+/// Structural protocol for environments that adapt an ``inner`` env.
 ///
-/// Conformers forward spaces, `spec`, `reset`, `step`, and `close` unless they
-/// intentionally override behaviour (e.g. ``OrderEnforcing``, TimeLimit in PR-08).
+/// ## Requirements (design.md §15.1)
 ///
-/// Associated observation/action types typically match `Inner` when the wrapper
-/// does not transform them. Transforming wrappers (PR-09) may use different types
-/// and need not use the default type-equality pattern of order/lifecycle wrappers.
+/// 1. Store ``inner``.
+/// 2. Forward `observationSpace` / `actionSpace` / `spec` / `reset` / `step` / `close`
+///    unless you intentionally change them.
+/// 3. Override only what you change; call `inner` for the rest.
+///
+/// Lifecycle wrappers (``OrderEnforcing``, ``TimeLimit``, ``PassiveEnvChecker``) keep the
+/// same observation/action types as `Inner`. Transform wrappers (``ClipAction``,
+/// ``TransformObservation``, …) may change associated types and expose a new space.
+///
+/// Stack **outside-in** (outermost receives calls first). See DocC *Wrapper composition*.
 public protocol EnvironmentWrapper: Environment {
     associatedtype Inner: Environment
     /// Immediate wrapped environment (one layer down).

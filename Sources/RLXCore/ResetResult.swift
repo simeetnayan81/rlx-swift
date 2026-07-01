@@ -1,15 +1,21 @@
 // ResetResult — outcome of Environment.reset (design.md §11.1).
 
-/// Value returned by `Environment.reset`.
+/// Outcome of a successful ``Environment/reset(seed:options:)``.
 ///
-/// Does **not** include reward, terminated, or truncated — those belong only
-/// on `StepResult`.
+/// Carries only the **initial** observation and optional diagnostics. Reward,
+/// `terminated`, and `truncated` appear exclusively on ``StepResult`` after a `step`.
+///
+/// Custom envs should ensure `observation` lies in ``Environment/observationSpace``
+/// (`PassiveEnvChecker` in `RLXWrappers` and `checkEnvironment` in `RLXTesting` enforce this when used).
 public struct ResetResult<Observation> {
-    /// Initial observation; must lie in the env's observation space.
+    /// Initial observation of the episode (`s₀`); must satisfy observation-space membership.
     public var observation: Observation
-    /// Diagnostics; may be empty.
+    /// Side-channel diagnostics (often empty at reset). Prefer scoped keys (see `InfoKeys` in `RLXWrappers`).
     public var info: Info
 
+    /// - Parameters:
+    ///   - observation: Episode start observation.
+    ///   - info: Optional diagnostics bag (default empty).
     public init(observation: Observation, info: Info = Info()) {
         self.observation = observation
         self.info = info

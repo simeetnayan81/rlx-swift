@@ -38,6 +38,7 @@ for contracts. DocC and code comments implement and teach those contracts; they 
 
 ### Essentials
 
+- <doc:ArchitectureForDevelopers>
 - <doc:EnvironmentLifecycle>
 - <doc:SpacesAndSampling>
 - <doc:SeedingAndPRNG>
